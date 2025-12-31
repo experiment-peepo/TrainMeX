@@ -9,8 +9,9 @@ using Microsoft.Win32;
 
 namespace TrainMe.ViewModels {
     public class LauncherViewModel : ObservableObject {
-        public ObservableCollection<string> AddedFiles { get; } = new ObservableCollection<string>();
-        private Dictionary<string, ScreenViewer> fileAssignments = new Dictionary<string, ScreenViewer>();
+        public ObservableCollection<VideoItem> AddedFiles { get; } = new ObservableCollection<VideoItem>();
+        public ObservableCollection<ScreenViewer> AvailableScreens { get; } = new ObservableCollection<ScreenViewer>();
+        
         private Random random = new Random();
 
         private double _volume;
@@ -89,17 +90,36 @@ namespace TrainMe.ViewModels {
             Volume = App.Settings.Volume;
             Opacity = App.Settings.Opacity;
 
+            RefreshScreens();
+
             HypnotizeCommand = new RelayCommand(Hypnotize, _ => IsHypnotizeEnabled);
             DehypnotizeCommand = new RelayCommand(Dehypnotize);
             PauseCommand = new RelayCommand(Pause);
             BrowseCommand = new RelayCommand(Browse);
             RemoveSelectedCommand = new RelayCommand(RemoveSelected);
+            RemoveItemCommand = new RelayCommand(RemoveItem);
             ClearAllCommand = new RelayCommand(ClearAll);
             ExitCommand = new RelayCommand(Exit);
             KofiCommand = new RelayCommand(Kofi);
             MinimizeCommand = new RelayCommand(Minimize);
 
             UpdateButtons();
+        }
+
+        public ICommand RemoveItemCommand { get; }
+
+        private void RemoveItem(object parameter) {
+            if (parameter is VideoItem item) {
+                AddedFiles.Remove(item);
+                UpdateButtons();
+            }
+        }
+
+        private void RefreshScreens() {
+            AvailableScreens.Clear();
+            foreach (var s in WindowServices.GetAllScreenViewers()) {
+                AvailableScreens.Add(s);
+            }
         }
 
         private void UpdateButtons() {
@@ -109,8 +129,8 @@ namespace TrainMe.ViewModels {
         }
 
         private bool AllFilesAssigned() {
-            foreach (string f in AddedFiles) {
-                if (!fileAssignments.ContainsKey(f)) return false;
+            foreach (var f in AddedFiles) {
+                if (f.AssignedScreen == null) return false;
             }
             return true;
         }
@@ -126,25 +146,26 @@ namespace TrainMe.ViewModels {
         }
 
         private Dictionary<ScreenViewer, IEnumerable<string>> BuildAssignmentsFromSelection(System.Collections.IList selectedItems) {
-            var selectedFiles = new List<string>();
-            if (selectedItems != null) {
-                foreach (string f in selectedItems) selectedFiles.Add(f);
-            }
-            
-            if (selectedFiles.Count < 1) {
+            var selectedFiles = new List<VideoItem>();
+            if (selectedItems != null && selectedItems.Count > 0) {
+                foreach (VideoItem f in selectedItems) selectedFiles.Add(f);
+            } else {
                 foreach (var f in AddedFiles) selectedFiles.Add(f);
             }
 
-            if (!AllFilesAssigned()) return null;
+            if (selectedFiles.Count < 1) return null;
+
+            // Simple validation again just in case
+            if (selectedFiles.Any(x => x.AssignedScreen == null)) return null;
 
             if (Shuffle) selectedFiles = selectedFiles.OrderBy(a => random.Next()).ToList();
 
             var assignments = new Dictionary<ScreenViewer, IEnumerable<string>>();
             foreach (var f in selectedFiles) {
-                var assigned = fileAssignments[f];
+                var assigned = f.AssignedScreen;
                 if (assigned == null) continue;
                 if (!assignments.ContainsKey(assigned)) assignments[assigned] = new List<string>();
-                ((List<string>)assignments[assigned]).Add(f);
+                ((List<string>)assignments[assigned]).Add(f.FilePath);
             }
             return assignments;
         }
@@ -173,12 +194,13 @@ namespace TrainMe.ViewModels {
                 Filter = "Video Files|*.mp4;*.mkv;*.avi;*.mov;*.wmv|All Files|*.*"
             };
             if (dlg.ShowDialog() == true) {
-                var viewers = WindowServices.GetAllScreenViewers();
-                var primary = viewers.FirstOrDefault(v => v.Screen.Primary) ?? viewers.FirstOrDefault();
+                // Ensure screens are up to date
+                if (AvailableScreens.Count == 0) RefreshScreens();
+                var primary = AvailableScreens.FirstOrDefault(v => v.Screen.Primary) ?? AvailableScreens.FirstOrDefault();
+                
                 foreach (var f in dlg.FileNames) {
-                    if (!AddedFiles.Contains(f)) {
-                        AddedFiles.Add(f);
-                        if (primary != null) fileAssignments[f] = primary;
+                    if (!AddedFiles.Any(x => x.FilePath == f)) {
+                        AddedFiles.Add(new VideoItem(f, primary));
                     }
                 }
                 UpdateButtons();
@@ -189,18 +211,16 @@ namespace TrainMe.ViewModels {
             var selectedItems = parameter as System.Collections.IList;
             if (selectedItems == null) return;
             
-            var toRemove = new List<string>();
-            foreach (string f in selectedItems) toRemove.Add(f);
+            var toRemove = new List<VideoItem>();
+            foreach (VideoItem f in selectedItems) toRemove.Add(f);
             foreach (var f in toRemove) {
                 AddedFiles.Remove(f);
-                if (fileAssignments.ContainsKey(f)) fileAssignments.Remove(f);
             }
             UpdateButtons();
         }
 
         private void ClearAll(object obj) {
             AddedFiles.Clear();
-            fileAssignments.Clear();
             UpdateButtons();
         }
 
@@ -223,30 +243,18 @@ namespace TrainMe.ViewModels {
         
         // Method to handle Drag & Drop from View
         public void AddDroppedFiles(string[] files) {
-             var viewers = WindowServices.GetAllScreenViewers();
-             var primary = viewers.FirstOrDefault(v => v.Screen.Primary) ?? viewers.FirstOrDefault();
+             if (AvailableScreens.Count == 0) RefreshScreens();
+             var primary = AvailableScreens.FirstOrDefault(v => v.Screen.Primary) ?? AvailableScreens.FirstOrDefault();
+
              foreach (var f in files) {
                  var ext = System.IO.Path.GetExtension(f)?.ToLowerInvariant();
                  if (ext == ".mp4" || ext == ".mkv" || ext == ".avi" || ext == ".mov" || ext == ".wmv") {
-                     if (!AddedFiles.Contains(f)) {
-                         AddedFiles.Add(f);
-                         if (primary != null) fileAssignments[f] = primary;
+                     if (!AddedFiles.Any(x => x.FilePath == f)) {
+                         AddedFiles.Add(new VideoItem(f, primary));
                      }
                  }
              }
              UpdateButtons();
-        }
-
-        // Method to handle assignment change from View
-        public void AssignFile(string file, ScreenViewer viewer) {
-            if (string.IsNullOrEmpty(file) || viewer == null) return;
-            fileAssignments[file] = viewer;
-            UpdateButtons();
-        }
-        
-        public ScreenViewer GetAssignment(string file) {
-            if (fileAssignments.ContainsKey(file)) return fileAssignments[file];
-            return null;
         }
     }
 }

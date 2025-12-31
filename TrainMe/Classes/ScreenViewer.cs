@@ -27,11 +27,10 @@ namespace TrainMe.Classes {
         }
 
         public override string ToString() {
-            var name = Screen?.DeviceName ?? "Unknown";
             var bounds = Screen?.Bounds;
-            var res = bounds.HasValue ? ($"{bounds.Value.Width}x{bounds.Value.Height}") : "";
-            var primary = (Screen != null && Screen.Primary) ? " (Primary)" : "";
-            return $"M{ID}: {name} {res}{primary}";
+            var res = bounds.HasValue ? ($"({bounds.Value.Width}x{bounds.Value.Height})") : "";
+            var primary = (Screen != null && Screen.Primary) ? " [Primary]" : "";
+            return $"Display {ID + 1} {res}{primary}";
         }
     }
 }
