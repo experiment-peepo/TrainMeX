@@ -21,7 +21,15 @@ namespace TrainMe {
     /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application {
-        public static Classes.VideoPlayerService VideoService { get; } = new Classes.VideoPlayerService();
-        public static Classes.UserSettings Settings { get; } = Classes.UserSettings.Load();
+        public static Classes.VideoPlayerService VideoService => Classes.ServiceContainer.Get<Classes.VideoPlayerService>();
+        public static Classes.UserSettings Settings => Classes.ServiceContainer.Get<Classes.UserSettings>();
+
+        protected override void OnStartup(StartupEventArgs e) {
+            base.OnStartup(e);
+            
+            // Register Services
+            Classes.ServiceContainer.Register(Classes.UserSettings.Load());
+            Classes.ServiceContainer.Register(new Classes.VideoPlayerService());
+        }
     }
 }

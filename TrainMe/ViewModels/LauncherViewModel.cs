@@ -99,6 +99,8 @@ namespace TrainMe.ViewModels {
             RemoveSelectedCommand = new RelayCommand(RemoveSelected);
             RemoveItemCommand = new RelayCommand(RemoveItem);
             ClearAllCommand = new RelayCommand(ClearAll);
+            SavePlaylistCommand = new RelayCommand(SavePlaylist);
+            LoadPlaylistCommand = new RelayCommand(LoadPlaylist);
             ExitCommand = new RelayCommand(Exit);
             KofiCommand = new RelayCommand(Kofi);
             MinimizeCommand = new RelayCommand(Minimize);
@@ -107,6 +109,8 @@ namespace TrainMe.ViewModels {
         }
 
         public ICommand RemoveItemCommand { get; }
+        public ICommand SavePlaylistCommand { get; }
+        public ICommand LoadPlaylistCommand { get; }
 
         private void RemoveItem(object parameter) {
             if (parameter is VideoItem item) {
@@ -255,6 +259,58 @@ namespace TrainMe.ViewModels {
                  }
              }
              UpdateButtons();
+        }
+
+        public void MoveVideoItem(VideoItem item, int newIndex) {
+            if (item == null) return;
+            var oldIndex = AddedFiles.IndexOf(item);
+            if (oldIndex < 0 || newIndex < 0 || newIndex >= AddedFiles.Count) return;
+            
+            AddedFiles.Move(oldIndex, newIndex);
+        }
+
+        private void SavePlaylist(object obj) {
+            var dlg = new SaveFileDialog {
+                Filter = "TrainMe Playlist|*.json",
+                FileName = "playlist.json"
+            };
+            if (dlg.ShowDialog() == true) {
+                var playlist = new Playlist();
+                foreach (var item in AddedFiles) {
+                    playlist.Items.Add(new PlaylistItem {
+                        FilePath = item.FilePath,
+                        ScreenId = item.AssignedScreen?.ID ?? 0
+                    });
+                }
+                
+                var json = System.Text.Json.JsonSerializer.Serialize(playlist);
+                System.IO.File.WriteAllText(dlg.FileName, json);
+            }
+        }
+
+        private void LoadPlaylist(object obj) {
+            var dlg = new OpenFileDialog {
+                Filter = "TrainMe Playlist|*.json"
+            };
+            if (dlg.ShowDialog() == true) {
+                try {
+                    var json = System.IO.File.ReadAllText(dlg.FileName);
+                    var playlist = System.Text.Json.JsonSerializer.Deserialize<Playlist>(json);
+                    
+                    if (playlist != null) {
+                        AddedFiles.Clear();
+                        if (AvailableScreens.Count == 0) RefreshScreens();
+                        
+                        foreach (var item in playlist.Items) {
+                            var screen = AvailableScreens.FirstOrDefault(s => s.ID == item.ScreenId) ?? AvailableScreens.FirstOrDefault();
+                            AddedFiles.Add(new VideoItem(item.FilePath, screen));
+                        }
+                        UpdateButtons();
+                    }
+                } catch (Exception ex) {
+                    MessageBox.Show($"Failed to load playlist: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
     }
 }

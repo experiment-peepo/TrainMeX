@@ -53,7 +53,11 @@
             <ListView x:Name="AddedFilesList" ItemsSource="{Binding AddedFiles}" SelectionMode="Single" 
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       ScrollViewer.VerticalScrollBarVisibility="Auto"
-                      AllowDrop="True" DragOver="AddedFilesList_DragOver" Drop="AddedFilesList_Drop"
+                      AllowDrop="True" 
+                      DragOver="AddedFilesList_DragOver" 
+                      Drop="AddedFilesList_Drop"
+                      PreviewMouseLeftButtonDown="AddedFilesList_PreviewMouseLeftButtonDown"
+                      MouseMove="AddedFilesList_MouseMove"
                       Background="Transparent" BorderThickness="0">
                 <ListView.ItemContainerStyle>
                     <Style TargetType="ListViewItem">
@@ -130,7 +134,11 @@
             </Grid>
         </Grid>
 
-        <Button Command="{Binding ClearAllCommand}" Margin="5,5" HorizontalAlignment="Right" Foreground="#FFAAAAAA" Background="Transparent" FontSize="10">Clear Playlist</Button>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,5">
+            <Button Command="{Binding SavePlaylistCommand}" Margin="5,0" Foreground="#FFAAAAAA" Background="Transparent" FontSize="10">Save Playlist</Button>
+            <Button Command="{Binding LoadPlaylistCommand}" Margin="5,0" Foreground="#FFAAAAAA" Background="Transparent" FontSize="10">Load Playlist</Button>
+            <Button Command="{Binding ClearAllCommand}" Margin="5,0" Foreground="#FFAAAAAA" Background="Transparent" FontSize="10">Clear Playlist</Button>
+        </StackPanel>
         
         
         
