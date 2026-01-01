@@ -4,7 +4,7 @@ REM This script builds a self-contained, single-file executable
 
 echo Building TrainMe as standalone portable executable...
 
-set PROJECT_PATH=TrainMe\TrainMe.csproj
+set PROJECT_PATH=TrainMe\TrainMeX\TrainMeX.csproj
 set OUTPUT_PATH=publish
 
 REM Clean previous publish
@@ -26,7 +26,7 @@ dotnet publish %PROJECT_PATH% ^
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo Build successful!
-    echo Standalone executable location: %CD%\%OUTPUT_PATH%\TrainMe.exe
+    echo Standalone executable location: %CD%\%OUTPUT_PATH%\TrainMeX.exe
     echo.
     echo The executable is portable and can be run from any location.
 ) else (

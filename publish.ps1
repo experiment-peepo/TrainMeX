@@ -3,7 +3,7 @@
 
 Write-Host "Building TrainMe as standalone portable executable..." -ForegroundColor Green
 
-$projectPath = "TrainMe\TrainMe.csproj"
+$projectPath = "TrainMe\TrainMeX\TrainMeX.csproj"
 $outputPath = "publish"
 
 # Clean previous publish
@@ -24,7 +24,7 @@ dotnet publish $projectPath `
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "`nBuild successful!" -ForegroundColor Green
-    Write-Host "Standalone executable location: $PWD\$outputPath\TrainMe.exe" -ForegroundColor Cyan
+    Write-Host "Standalone executable location: $PWD\$outputPath\TrainMeX.exe" -ForegroundColor Cyan
     Write-Host "`nThe executable is portable and can be run from any location." -ForegroundColor Yellow
 } else {
     Write-Host "`nBuild failed with exit code: $LASTEXITCODE" -ForegroundColor Red

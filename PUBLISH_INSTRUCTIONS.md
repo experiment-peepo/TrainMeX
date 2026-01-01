@@ -21,14 +21,14 @@ publish.bat
 
 ### Option 3: Manual Command
 ```bash
-dotnet publish TrainMe\TrainMe.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+dotnet publish TrainMe\TrainMeX\TrainMeX.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
 
 ## Output
 
 After successful build, the standalone executable will be located at:
 ```
-publish\TrainMe.exe
+publish\TrainMeX.exe
 ```
 
 ## What Makes It Portable?
