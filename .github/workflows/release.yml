@@ -1,0 +1,62 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore TrainMeX.sln
+      
+    - name: Build and Publish
+      run: |
+        dotnet publish TrainMe\TrainMeX\TrainMeX.csproj `
+          -c Release `
+          -r win-x64 `
+          --self-contained true `
+          -p:PublishSingleFile=true `
+          -p:IncludeNativeLibrariesForSelfExtract=true `
+          -o publish
+      
+    - name: Get version from tag
+      id: tag_version
+      run: |
+        $tag = "${{ github.ref }}"
+        $version = $tag -replace "refs/tags/", ""
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+      shell: pwsh
+      
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: publish/TrainMeX.exe
+        name: Release ${{ steps.tag_version.outputs.version }}
+        body: |
+          ## TrainMeX Release ${{ steps.tag_version.outputs.version }}
+          
+          ### Changes
+          - See commit history for details
+          
+          ### Installation
+          Download `TrainMeX.exe` from the assets below. The executable is portable and requires no installation.
+          
+          ### System Requirements
+          - Windows x64
+          - No .NET runtime required (self-contained)
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
