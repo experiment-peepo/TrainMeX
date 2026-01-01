@@ -19,16 +19,16 @@ jobs:
         dotnet-version: '8.0.x'
         
     - name: Restore dependencies
-      run: dotnet restore TrainMe/TrainMe.sln
+      run: dotnet restore TrainMe.sln
       
     - name: Build solution
-      run: dotnet build TrainMe/TrainMe.sln -c Release --no-restore
+      run: dotnet build TrainMe.sln -c Release --no-restore
       
     - name: Run tests
-      run: dotnet test TrainMe/TrainMe.sln -c Release --no-build --verbosity normal
+      run: dotnet test TrainMe.sln -c Release --no-build --verbosity normal
       
     - name: Publish application
-      run: dotnet publish TrainMe/TrainMe/TrainMe.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+      run: dotnet publish TrainMe/TrainMe.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
       
     - name: Create release
       uses: softprops/action-gh-release@v1
