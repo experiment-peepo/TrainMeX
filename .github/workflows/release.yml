@@ -37,13 +37,15 @@ jobs:
         $tag = "${{ github.ref }}"
         $version = $tag -replace "refs/tags/", ""
         echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "Tag version: $version"
       shell: pwsh
       
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
         files: publish/TrainMeX.exe
-        name: Release ${{ steps.tag_version.outputs.version }}
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }}
         body: |
           ## TrainMeX Release ${{ steps.tag_version.outputs.version }}
           
