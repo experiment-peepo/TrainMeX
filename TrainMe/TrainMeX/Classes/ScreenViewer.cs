@@ -42,7 +42,13 @@ namespace TrainMeX.Classes {
             
             var bounds = Screen?.Bounds;
             var res = bounds.HasValue ? ($"{bounds.Value.Width}x{bounds.Value.Height}") : "Unknown";
-            return $"Screen {screenNumber} : {res}";
+            
+            // Check if this is the primary screen
+            bool isPrimary = Screen?.Primary ?? false;
+            string primaryText = isPrimary ? " (Primary)" : "";
+            
+            // Include DeviceName and Primary indicator
+            return $"Screen {screenNumber} : {res}{primaryText} - {DeviceName}";
         }
     }
 }

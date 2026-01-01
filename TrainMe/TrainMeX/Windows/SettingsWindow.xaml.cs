@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Input;
 using TrainMeX.ViewModels;
@@ -21,7 +22,18 @@ namespace TrainMeX.Windows {
         }
 
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
-            this.DragMove();
+            // Mark event as handled to prevent event bubbling issues
+            e.Handled = true;
+            
+            // Call DragMove immediately while the button is definitely pressed
+            if (e.ButtonState == MouseButtonState.Pressed) {
+                try {
+                    this.DragMove();
+                } catch (InvalidOperationException) {
+                    // Silently handle the case where DragMove fails
+                    // This can happen in rare timing scenarios
+                }
+            }
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e) {

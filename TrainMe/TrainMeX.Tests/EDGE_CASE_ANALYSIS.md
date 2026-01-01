@@ -77,7 +77,7 @@ This document provides a comprehensive analysis of edge cases across all TrainMe
 |-----------|-----------------|------------|----------------|
 | **Empty video queue** | `PlayNext()` returns early if `_files.Length == 0` | Low | ✅ Handled correctly |
 | **Single video in queue** | Loops back to index 0 | Low | ✅ Expected behavior |
-| **All videos fail to play** | `OnMediaFailed()` calls `PlayNext()` - infinite loop possible | High | Add failure counter, skip after N failures |
+| **All videos fail to play** | `OnMediaFailed()` has failure counter and stops after N failures | ✅ Fixed | ✅ Failure counter added, stops after 10 consecutive failures |
 | **Corrupted video files** | MediaElement may fail to load | Medium | Already handled by `OnMediaFailed()`, but could validate file headers |
 | **Zero-length video files** | May cause MediaElement issues | Medium | Check file size before adding to queue |
 | **No audio track** | Video plays silently | Low | ✅ Acceptable behavior |
@@ -109,7 +109,8 @@ This document provides a comprehensive analysis of edge cases across all TrainMe
 - ✅ Logs error
 - ✅ Raises event
 - ✅ Calls `PlayNext()` to skip
-- ⚠️ Could cause infinite loop if all videos fail
+- ✅ **FIXED**: Failure counter prevents infinite loop (stops after 10 consecutive failures)
+- ✅ Per-file failure tracking (skips files after 3 failures)
 
 **`VideoPlayerService.PlayOnScreens()`:**
 - ✅ Stops all before starting
@@ -117,11 +118,11 @@ This document provides a comprehensive analysis of edge cases across all TrainMe
 - ⚠️ No validation that screens are still valid
 - ⚠️ No check for empty queue
 
-**`VideoPlayerService.NormalizeItems()`:**
+**`VideoPlayerService.NormalizeItemsAsync()`:**
 - ✅ Filters out non-rooted paths
 - ✅ Checks file existence asynchronously
-- ⚠️ Uses blocking `.GetAwaiter().GetResult()` - could deadlock
-- ⚠️ No timeout on file existence check
+- ✅ **FIXED**: Fully async method using `ConfigureAwait(false)` - no deadlock risk
+- ⚠️ No timeout on file existence check (but has retry logic with exponential backoff)
 
 ---
 
@@ -392,45 +393,49 @@ This document provides a comprehensive analysis of edge cases across all TrainMe
 ### Component: `GlobalHotkeyService.cs`
 
 #### Current Coverage
-- ❌ None (no tests exist)
+- ✅ Tests exist (GlobalHotkeyServiceTests.cs)
+- ✅ Basic initialization and disposal tests
+- ✅ Invalid key name handling (fallback to End key)
+- ✅ Multiple initialization scenarios
+- ✅ Reinitialize functionality
 
 #### Additional Edge Cases Identified
 
 | Edge Case | Current Handling | Risk Level | Recommendation |
 |-----------|-----------------|------------|----------------|
-| **Hotkey already registered** | `RegisterHotKey()` returns false, but not checked | High | Check return value and handle failure |
+| **Hotkey already registered** | `RegisterHotKey()` return value checked and logged | ✅ Fixed | ✅ Return value is checked and warning is logged |
 | **Invalid key name** | Falls back to End key | Low | ✅ Handled with fallback |
 | **Invalid modifiers combination** | No validation | Medium | Validate modifier values |
 | **Window handle becomes invalid** | Checked in Dispose | Low | ✅ Handled |
 | **Reinitialize during active registration** | Unregisters old, registers new | Low | ✅ Handled correctly |
 | **Dispose without initialization** | Checks for zero handle | Low | ✅ Handled |
 | **Multiple Initialize calls** | No protection | Medium | Check if already initialized |
-| **Hotkey registration failure** | Return value not checked | High | Check return value and log/notify |
+| **Hotkey registration failure** | Return value checked and logged | ✅ Fixed | ✅ Return value is checked and warning is logged |
 
 #### Code Analysis
 
 **`GlobalHotkeyService.Initialize()`:**
 - ✅ Parses key name with fallback
 - ✅ Registers hotkey
-- ⚠️ **CRITICAL**: Does not check `RegisterHotKey()` return value
-- ⚠️ No check if already initialized
+- ✅ **FIXED**: Checks `RegisterHotKey()` return value and logs warning
+- ⚠️ No check if already initialized (may overwrite previous registration)
 - ⚠️ No validation of modifiers
 
 **`GlobalHotkeyService.Reinitialize()`:**
 - ✅ Unregisters old hotkey
 - ✅ Registers new hotkey
-- ⚠️ Does not check return values
+- ✅ **FIXED**: Checks return values and logs warnings
 
 **`GlobalHotkeyService.Dispose()`:**
 - ✅ Checks for valid handle
 - ✅ Removes hook
 - ✅ Unregisters hotkey
-- ⚠️ Does not check `UnregisterHotKey()` return value
+- ✅ **FIXED**: Checks `UnregisterHotKey()` return value and logs warning
 
-**Critical Issue:**
-- ⚠️ **HIGH RISK**: `RegisterHotKey()` failures are silently ignored
-- If hotkey is already registered by another app, panic hotkey won't work
-- Recommendation: Check return values and notify user
+**Status:**
+- ✅ **RESOLVED**: `RegisterHotKey()` failures are now detected and logged
+- If hotkey is already registered by another app, warning is logged
+- Return value checking implemented in Initialize(), Reinitialize(), and Dispose()
 
 ---
 
@@ -612,8 +617,8 @@ This document provides a comprehensive analysis of edge cases across all TrainMe
 **Exception Handlers:**
 - ✅ Log exceptions
 - ✅ Show user-friendly messages
-- ⚠️ **CRITICAL**: Exception handlers themselves could throw
-- ⚠️ No cleanup of resources on fatal exception
+- ✅ **FIXED**: Exception handlers wrapped in try-catch to prevent infinite loops
+- ⚠️ No cleanup of resources on fatal exception (may be acceptable for fatal errors)
 
 ---
 
@@ -640,23 +645,25 @@ This document provides a comprehensive analysis of edge cases across all TrainMe
 
 ### High Priority (Fix Recommended)
 
-1. **`GlobalHotkeyService`: Hotkey registration failures ignored**
-   - `RegisterHotKey()` return value not checked
-   - Panic hotkey may silently fail
-   - **Fix**: Check return values and notify user
+1. **`GlobalHotkeyService`: Hotkey registration failures ignored** ✅ **FIXED**
+   - ~~`RegisterHotKey()` return value not checked~~
+   - ✅ Return value now checked and logged
+   - ✅ Panic hotkey failures are detected and logged
 
-2. **`VideoPlayerService.NormalizeItems()`: Potential deadlock**
-   - Uses blocking `.GetAwaiter().GetResult()` 
-   - Called from potentially UI thread
-   - **Fix**: Make fully async or use `ConfigureAwait(false)`
+2. **`VideoPlayerService.NormalizeItems()`: Potential deadlock** ✅ **FIXED**
+   - ~~Uses blocking `.GetAwaiter().GetResult()`~~
+   - ✅ Method is now fully async (`NormalizeItemsAsync`)
+   - ✅ Uses `ConfigureAwait(false)` to prevent deadlocks
 
-3. **`HypnoViewModel.OnMediaFailed()`: Infinite retry loop**
-   - If all videos fail, continuously retries
-   - **Fix**: Add failure counter, skip after N failures
+3. **`HypnoViewModel.OnMediaFailed()`: Infinite retry loop** ✅ **FIXED**
+   - ~~If all videos fail, continuously retries~~
+   - ✅ Failure counter added (`MaxConsecutiveFailures = 10`)
+   - ✅ Per-file failure tracking (skips after 3 failures per file)
 
-4. **`App.xaml.cs`: Exception handlers can throw**
-   - Exception in handler could cause issues
-   - **Fix**: Wrap handlers in try-catch
+4. **`App.xaml.cs`: Exception handlers can throw** ✅ **FIXED**
+   - ~~Exception in handler could cause issues~~
+   - ✅ Exception handlers wrapped in try-catch blocks
+   - ✅ Prevents infinite exception loops
 
 ### Medium Priority (Consider Fixing)
 
@@ -772,11 +779,19 @@ This document provides a comprehensive analysis of edge cases across all TrainMe
 
 This analysis identified **15 major component areas** with **100+ edge cases**, including:
 
-- **4 Critical Issues** requiring immediate attention
+- **4 Critical Issues** - ✅ **ALL FIXED**
+  - ✅ GlobalHotkeyService hotkey registration failures (now checked and logged)
+  - ✅ VideoPlayerService.NormalizeItems() deadlock (now fully async)
+  - ✅ HypnoViewModel.OnMediaFailed() infinite retry loop (failure counter added)
+  - ✅ App.xaml.cs exception handlers (wrapped in try-catch)
 - **4 Medium Priority Issues** to consider fixing
 - **10+ Test Coverage Gaps** to address
 
-The application demonstrates good error handling in many areas, but has several critical issues around hotkey registration, async operations, and infinite retry scenarios that should be addressed.
+The application demonstrates **excellent error handling** in most areas. All critical issues identified have been resolved. The codebase now includes:
+- Proper async/await patterns to prevent deadlocks
+- Failure tracking and limits to prevent infinite loops
+- Comprehensive exception handling with nested try-catch blocks
+- Return value checking for critical operations
 
-Most edge cases are handled gracefully through try-catch blocks and fallback logic, but validation and thread safety improvements would enhance robustness.
+Most edge cases are handled gracefully through try-catch blocks and fallback logic. Remaining improvements (thread safety, additional validation) would further enhance robustness but are not critical for production use.
 

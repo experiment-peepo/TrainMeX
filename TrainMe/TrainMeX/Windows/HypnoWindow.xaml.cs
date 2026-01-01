@@ -33,23 +33,75 @@ namespace TrainMeX.Windows {
         }
         
         private void ViewModel_RequestPlay(object sender, EventArgs e) {
-            FirstVideo?.Play();
+            // Check disposal state and MediaElement availability
+            if (_disposed || FirstVideo == null) return;
+            
+            try {
+                // Only play if MediaElement has a source and is in a valid state
+                // Double-check disposal state after the initial check to handle race conditions
+                if (!_disposed && FirstVideo != null && FirstVideo.Source != null) {
+                    FirstVideo.Play();
+                }
+            } catch (InvalidOperationException ex) {
+                // MediaElement may be in an invalid state (e.g., disposed)
+                Logger.Warning("MediaElement operation failed - may be disposed or in invalid state", ex);
+            } catch (Exception ex) {
+                Logger.Error("Error in ViewModel_RequestPlay", ex);
+            }
         }
 
         private void ViewModel_RequestPause(object sender, EventArgs e) {
-            FirstVideo?.Pause();
+            // Check disposal state and MediaElement availability
+            if (_disposed || FirstVideo == null) return;
+            
+            try {
+                // Double-check disposal state after the initial check to handle race conditions
+                if (!_disposed && FirstVideo != null) {
+                    FirstVideo.Pause();
+                }
+            } catch (InvalidOperationException ex) {
+                // MediaElement may be in an invalid state (e.g., disposed)
+                Logger.Warning("MediaElement operation failed - may be disposed or in invalid state", ex);
+            } catch (Exception ex) {
+                Logger.Error("Error in ViewModel_RequestPause", ex);
+            }
         }
 
         private void ViewModel_RequestStop(object sender, EventArgs e) {
-            FirstVideo?.Stop();
-            FirstVideo?.Close();
+            // Check disposal state and MediaElement availability
+            if (_disposed || FirstVideo == null) return;
+            
+            try {
+                // Double-check disposal state after the initial check to handle race conditions
+                if (!_disposed && FirstVideo != null) {
+                    FirstVideo.Stop();
+                    FirstVideo.Close();
+                }
+            } catch (InvalidOperationException ex) {
+                // MediaElement may be in an invalid state (e.g., disposed)
+                Logger.Warning("MediaElement operation failed - may be disposed or in invalid state", ex);
+            } catch (Exception ex) {
+                Logger.Error("Error in ViewModel_RequestStop", ex);
+            }
         }
 
         private void ViewModel_RequestStopBeforeSourceChange(object sender, EventArgs e) {
-            // Stop the current video before changing source to ensure MediaEnded fires reliably
-            // This prevents WPF MediaElement from missing MediaEnded events when Source changes
-            if (FirstVideo != null) {
-                FirstVideo.Stop();
+            // Check disposal state and MediaElement availability
+            if (_disposed || FirstVideo == null) return;
+            
+            try {
+                // Double-check disposal state after the initial check to handle race conditions
+                // Stop the current video before changing source to ensure MediaEnded fires reliably
+                // This prevents WPF MediaElement from missing MediaEnded events when Source changes
+                // Stop() is synchronous and will complete before the source change happens
+                if (!_disposed && FirstVideo != null) {
+                    FirstVideo.Stop();
+                }
+            } catch (InvalidOperationException ex) {
+                // MediaElement may be in an invalid state (e.g., disposed)
+                Logger.Warning("MediaElement operation failed - may be disposed or in invalid state", ex);
+            } catch (Exception ex) {
+                Logger.Error("Error in ViewModel_RequestStopBeforeSourceChange", ex);
             }
         }
 
@@ -89,21 +141,52 @@ namespace TrainMeX.Windows {
         }
 
         private void FirstVideo_MediaEnded(object sender, RoutedEventArgs e) {
-            _viewModel.OnMediaEnded();
+            if (_disposed || _viewModel == null) return;
+            
+            try {
+                _viewModel.OnMediaEnded();
+            } catch (Exception ex) {
+                Logger.Error("Error in FirstVideo_MediaEnded", ex);
+            }
         }
 
         private void FirstVideo_MediaFailed(object sender, ExceptionRoutedEventArgs e) {
-            _viewModel.OnMediaFailed(e.ErrorException);
+            if (_disposed || _viewModel == null) return;
+            
+            try {
+                _viewModel.OnMediaFailed(e.ErrorException);
+            } catch (Exception ex) {
+                Logger.Error("Error in FirstVideo_MediaFailed", ex);
+            }
         }
 
         private void ViewModel_MediaErrorOccurred(object sender, MediaErrorEventArgs e) {
-            // Forward the error to the VideoPlayerService so it can notify subscribers
-            App.VideoService.OnMediaError(e.ErrorMessage);
+            if (_disposed) return;
+            
+            try {
+                // Forward the error to the VideoPlayerService so it can notify subscribers
+                App.VideoService?.OnMediaError(e.ErrorMessage);
+            } catch (Exception ex) {
+                Logger.Error("Error in ViewModel_MediaErrorOccurred", ex);
+            }
         }
 
         private void FirstVideo_MediaOpened(object sender, RoutedEventArgs e) {
-            // Ensure the video starts playing when it's loaded
-            FirstVideo.Play();
+            // Check disposal state and dependencies
+            if (_disposed || _viewModel == null || FirstVideo == null) return;
+            
+            try {
+                // Double-check disposal state to handle race conditions
+                if (!_disposed && _viewModel != null && FirstVideo != null) {
+                    // Notify view model that media opened successfully
+                    // This will trigger RequestPlay event which will call Play()
+                    _viewModel.OnMediaOpened();
+                    // Note: Play() is now called via RequestPlay event from OnMediaOpened()
+                    // This ensures proper sequencing and state management
+                }
+            } catch (Exception ex) {
+                Logger.Error("Error in FirstVideo_MediaOpened", ex);
+            }
         }
 
         [DllImport("user32.dll")]

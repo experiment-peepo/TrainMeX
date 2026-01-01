@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using TrainMeX.Classes;
 using TrainMeX.ViewModels;
 using Xunit;
@@ -107,88 +108,97 @@ namespace TrainMeX.Tests {
         }
 
         [Fact]
-        public void PlayPerMonitor_WithNullAssignments_DoesNotThrow() {
+        public async Task PlayPerMonitor_WithNullAssignments_DoesNotThrow() {
             var service = new VideoPlayerService();
             
-            service.PlayPerMonitor(null);
+            await service.PlayPerMonitorAsync(null);
             
             Assert.False(service.IsPlaying);
         }
 
         [Fact]
-        public void PlayPerMonitor_WithEmptyAssignments_DoesNotThrow() {
+        public async Task PlayPerMonitor_WithEmptyAssignments_DoesNotThrow() {
             var service = new VideoPlayerService();
             var assignments = new Dictionary<ScreenViewer, IEnumerable<VideoItem>>();
             
-            service.PlayPerMonitor(assignments);
+            await service.PlayPerMonitorAsync(assignments);
             
             Assert.False(service.IsPlaying);
         }
 
         [Fact]
-        public void PlayOnScreens_WithNullFiles_DoesNotThrow() {
+        public async Task PlayOnScreens_WithNullFiles_DoesNotThrow() {
             var service = new VideoPlayerService();
             var screens = new List<ScreenViewer>();
             
             // This will create windows, so we'll just verify it doesn't throw
             // In a real scenario, we'd mock the windows
             try {
-                service.PlayOnScreens(null, screens);
+                await service.PlayOnScreensAsync(null, screens);
             } catch {
                 // May throw due to WPF dependencies, which is expected in unit tests
             }
         }
 
         [Fact]
-        public void PlayOnScreens_WithNullScreens_DoesNotThrow() {
+        public async Task PlayOnScreens_WithNullScreens_DoesNotThrow() {
             var service = new VideoPlayerService();
             var files = new List<VideoItem>();
             
-            service.PlayOnScreens(files, null);
+            await service.PlayOnScreensAsync(files, null);
             
             Assert.False(service.IsPlaying);
         }
 
         [Fact]
-        public void NormalizeItems_WithNullFiles_ReturnsEmpty() {
+        public async Task NormalizeItems_WithNullFiles_ReturnsEmpty() {
             var service = new VideoPlayerService();
             
-            // Use reflection to access private method for testing
-            var method = typeof(VideoPlayerService).GetMethod("NormalizeItems", 
+            // Use reflection to access private async method for testing
+            var method = typeof(VideoPlayerService).GetMethod("NormalizeItemsAsync", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             
             if (method != null) {
-                var result = method.Invoke(service, new object[] { null }) as IEnumerable<VideoItem>;
-                Assert.Empty(result);
+                var task = method.Invoke(service, new object[] { null }) as Task<IEnumerable<VideoItem>>;
+                if (task != null) {
+                    var result = await task;
+                    Assert.Empty(result);
+                }
             }
         }
 
         [Fact]
-        public void NormalizeItems_WithRelativePath_ExcludesItem() {
+        public async Task NormalizeItems_WithRelativePath_ExcludesItem() {
             var service = new VideoPlayerService();
             var item = new VideoItem("relative/path.mp4");
             
-            var method = typeof(VideoPlayerService).GetMethod("NormalizeItems", 
+            var method = typeof(VideoPlayerService).GetMethod("NormalizeItemsAsync", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             
             if (method != null) {
-                var result = method.Invoke(service, new object[] { new[] { item } }) as IEnumerable<VideoItem>;
-                Assert.Empty(result);
+                var task = method.Invoke(service, new object[] { new[] { item } }) as Task<IEnumerable<VideoItem>>;
+                if (task != null) {
+                    var result = await task;
+                    Assert.Empty(result);
+                }
             }
         }
 
         [Fact]
-        public void NormalizeItems_WithAbsolutePath_IncludesItem() {
+        public async Task NormalizeItems_WithAbsolutePath_IncludesItem() {
             var service = new VideoPlayerService();
             var item = new VideoItem(_testVideoFile);
             
-            var method = typeof(VideoPlayerService).GetMethod("NormalizeItems", 
+            var method = typeof(VideoPlayerService).GetMethod("NormalizeItemsAsync", 
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             
             if (method != null) {
-                var result = method.Invoke(service, new object[] { new[] { item } }) as IEnumerable<VideoItem>;
-                // Result may be empty if file doesn't exist in cache, but method should not throw
-                Assert.NotNull(result);
+                var task = method.Invoke(service, new object[] { new[] { item } }) as Task<IEnumerable<VideoItem>>;
+                if (task != null) {
+                    var result = await task;
+                    // Result may be empty if file doesn't exist in cache, but method should not throw
+                    Assert.NotNull(result);
+                }
             }
         }
 

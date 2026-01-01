@@ -63,6 +63,9 @@ namespace TrainMeX.Windows {
         }
 
         private void Grid_MouseLeftButtonDown(object sender, MouseButtonEventArgs e) {
+            // Mark event as handled to prevent event bubbling issues
+            e.Handled = true;
+            
             // Allow dragging even when maximized - restore first then drag
             if (WindowState == WindowState.Maximized) {
                 // Calculate the position to restore to based on mouse position
@@ -73,7 +76,17 @@ namespace TrainMeX.Windows {
                 Left = point.X - (RestoreBounds.Width * 0.5);
                 Top = point.Y - 10; // Small offset from top
             }
-            this.DragMove();
+            
+            // Call DragMove immediately while the button is definitely pressed
+            // Use the event args button state which is guaranteed to be pressed at this point
+            if (e.ButtonState == MouseButtonState.Pressed) {
+                try {
+                    this.DragMove();
+                } catch (InvalidOperationException) {
+                    // Silently handle the case where DragMove fails
+                    // This can happen in rare timing scenarios
+                }
+            }
         }
         
         // Make the entire window draggable, not just the header
@@ -98,6 +111,9 @@ namespace TrainMeX.Windows {
                     parent = VisualTreeHelper.GetParent(parent);
                 }
             }
+            
+            // Mark event as handled to prevent event bubbling issues
+            e.Handled = true;
             
             // Allow dragging even when maximized - restore first then drag
             if (WindowState == WindowState.Maximized) {
@@ -125,7 +141,17 @@ namespace TrainMeX.Windows {
                     }
                 }
             }
-            this.DragMove();
+            
+            // Call DragMove immediately while the button is definitely pressed
+            // Use the event args button state which is guaranteed to be pressed at this point
+            if (e.ButtonState == MouseButtonState.Pressed) {
+                try {
+                    this.DragMove();
+                } catch (InvalidOperationException) {
+                    // Silently handle the case where DragMove fails
+                    // This can happen in rare timing scenarios
+                }
+            }
         }
 
 
@@ -216,6 +242,23 @@ namespace TrainMeX.Windows {
             base.OnStateChanged(e);
             if (MaximizeButton != null) {
                 MaximizeButton.Content = WindowState == WindowState.Maximized ? "❐" : "□";
+            }
+            
+            // Update border corner radius based on window state
+            if (WindowState == WindowState.Maximized) {
+                if (MainBorder != null) {
+                    MainBorder.CornerRadius = new CornerRadius(0);
+                }
+                if (HeaderBorder != null) {
+                    HeaderBorder.CornerRadius = new CornerRadius(0);
+                }
+            } else {
+                if (MainBorder != null) {
+                    MainBorder.CornerRadius = new CornerRadius(8);
+                }
+                if (HeaderBorder != null) {
+                    HeaderBorder.CornerRadius = new CornerRadius(8, 8, 0, 0);
+                }
             }
         }
     }
@@ -374,15 +417,38 @@ public static readonly StatusMessageTypeToForegroundConverter Instance = new Sta
     }
 
     public class OpacityToIntConverter : IValueConverter {
+        private const double MaxOpacity = 0.90;
+
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
             if (value is double opacity) {
-                return ((int)Math.Round(opacity * 100)).ToString();
+                // Scale 0-0.90 opacity range to 0-100 display range
+                return ((int)Math.Round((opacity / MaxOpacity) * 100)).ToString();
             }
             return "0";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
             throw new NotImplementedException();
+        }
+    }
+
+    public class OpacityScaleConverter : IValueConverter {
+        private const double MaxOpacity = 0.90;
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) {
+            // Convert: opacity (0-0.90) -> slider value (0-1.0)
+            if (value is double opacity) {
+                return opacity / MaxOpacity;
+            }
+            return 0.0;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
+            // ConvertBack: slider value (0-1.0) -> opacity (0-0.90)
+            if (value is double sliderValue) {
+                return sliderValue * MaxOpacity;
+            }
+            return 0.0;
         }
     }
 }

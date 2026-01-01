@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Controls;
@@ -12,6 +14,11 @@ namespace TrainMeX.ViewModels {
         private int _currentPos = 0;
         private int _consecutiveFailures = 0;
         private const int MaxConsecutiveFailures = 10; // Stop retrying after 10 consecutive failures
+        private Dictionary<string, int> _fileFailureCounts = new Dictionary<string, int>(); // Track failures per file
+        private const int MaxFailuresPerFile = 3; // Skip a file after 3 failures
+        private bool _isLoading = false; // Prevent concurrent LoadCurrentVideo() calls
+        private readonly object _loadLock = new object(); // Lock for loading operations
+        private Uri _expectedSource = null; // Track the source we're expecting MediaOpened for
         
         private Uri _currentSource;
         public Uri CurrentSource {
@@ -49,10 +56,33 @@ namespace TrainMeX.ViewModels {
         }
 
         public void SetQueue(IEnumerable<VideoItem> files) {
+            // Unsubscribe from current item's PropertyChanged event to prevent memory leaks
+            // This must be done before changing the queue to ensure proper cleanup
+            lock (_loadLock) {
+                if (_currentItem != null) {
+                    _currentItem.PropertyChanged -= CurrentItem_PropertyChanged;
+                    _currentItem = null;
+                }
+                // Reset loading state when queue changes
+                _isLoading = false;
+            }
+            
             // Materialize to array for indexed access - this is necessary for PlayNext() logic
             _files = files?.ToArray() ?? Array.Empty<VideoItem>();
             _currentPos = -1;
             _consecutiveFailures = 0; // Reset failure counter when queue changes
+            _fileFailureCounts.Clear(); // Clear per-file failure counts when queue changes
+            
+            // Clear expected source to stop any in-progress loading (must be in lock for thread safety)
+            lock (_loadLock) {
+                _expectedSource = null;
+            }
+            
+            // Clear current source to stop any in-progress loading
+            // This prevents MediaOpened events from old sources firing after queue change
+            CurrentSource = null;
+            
+            // Start playing the new queue
             PlayNext();
         }
 
@@ -61,46 +91,125 @@ namespace TrainMeX.ViewModels {
         public void PlayNext() {
             if (_files == null || _files.Length == 0) return;
 
-            if (_currentPos + 1 < _files.Length) {
-                _currentPos++;
-            } else {
-                _currentPos = 0; // Loop
+            // Prevent rapid/concurrent calls to PlayNext() while loading
+            // This protects against race conditions when PlayNext() is called multiple times quickly
+            lock (_loadLock) {
+                if (_isLoading) {
+                    Logger.Warning("PlayNext() called while already loading, skipping to prevent race condition");
+                    return;
+                }
             }
+
+            // Find the next valid video that hasn't failed too many times
+            int attempts = 0;
+            
+            do {
+                if (_currentPos + 1 < _files.Length) {
+                    _currentPos++;
+                } else {
+                    _currentPos = 0; // Loop
+                }
+                
+                attempts++;
+                
+                // Prevent infinite loop if all files have failed
+                if (attempts > _files.Length) {
+                    Logger.Warning("All videos in queue have failed too many times. Stopping playback.");
+                    MediaErrorOccurred?.Invoke(this, new MediaErrorEventArgs("All videos in queue have failed. Please check your video files."));
+                    return;
+                }
+                
+                // Check if current file has failed too many times
+                var currentPath = _files[_currentPos]?.FilePath;
+                if (currentPath != null && _fileFailureCounts.TryGetValue(currentPath, out int failures) && failures >= MaxFailuresPerFile) {
+                    continue; // Skip this file, try next
+                }
+                
+                break; // Found a valid file
+            } while (true);
 
             LoadCurrentVideo();
         }
 
         private void LoadCurrentVideo() {
-            if (_currentItem != null) {
-                _currentItem.PropertyChanged -= CurrentItem_PropertyChanged;
+            // Prevent concurrent calls to LoadCurrentVideo
+            lock (_loadLock) {
+                if (_isLoading) {
+                    Logger.Warning("LoadCurrentVideo() called while already loading, skipping");
+                    return;
+                }
+                _isLoading = true;
             }
 
-            if (_files == null || _files.Length == 0 || _currentPos < 0 || _currentPos >= _files.Length) return;
+            try {
+                if (_currentItem != null) {
+                    _currentItem.PropertyChanged -= CurrentItem_PropertyChanged;
+                }
 
-            _currentItem = _files[_currentPos];
-            _currentItem.PropertyChanged += CurrentItem_PropertyChanged;
-            
-            var path = _currentItem.FilePath;
-            
-            if (!System.IO.Path.IsPathRooted(path)) {
-                return;
-            }
-            
-            // Apply per-monitor/per-item settings
-            Opacity = _currentItem.Opacity;
-            Volume = _currentItem.Volume;
-            
-            // Stop the current video before changing source to ensure MediaEnded fires reliably
-            // This fixes an issue where MediaEnded doesn't fire on secondary monitors
-            RequestStopBeforeSourceChange?.Invoke(this, EventArgs.Empty);
-            
-            CurrentSource = new Uri(path, UriKind.Absolute);
-            RequestPlay?.Invoke(this, EventArgs.Empty);
-            
-            // Reset failure counter when successfully loading a new video
-            // (will be reset again on MediaEnded, but this handles the case where video starts playing)
-            if (_consecutiveFailures > 0) {
-                _consecutiveFailures = 0;
+                if (_files == null || _files.Length == 0 || _currentPos < 0 || _currentPos >= _files.Length) {
+                    lock (_loadLock) {
+                        _isLoading = false;
+                    }
+                    return;
+                }
+
+                _currentItem = _files[_currentPos];
+                _currentItem.PropertyChanged += CurrentItem_PropertyChanged;
+                
+                var path = _currentItem.FilePath;
+                
+                if (!Path.IsPathRooted(path)) {
+                    lock (_loadLock) {
+                        _isLoading = false;
+                    }
+                    return;
+                }
+                
+                // Re-validate file existence before attempting to load
+                // Files could be deleted or become inaccessible between queue setup and playback
+                if (!FileValidator.ValidateVideoFile(path, out string validationError)) {
+                    Logger.Warning($"File validation failed for '{_currentItem.FileName}': {validationError}. Skipping to next video.");
+                    // Reset loading flag before calling PlayNext() recursively
+                    lock (_loadLock) {
+                        _isLoading = false;
+                    }
+                    // Skip to next video instead of failing
+                    // PlayNext() will check loading state and proceed safely
+                    PlayNext();
+                    return;
+                }
+                
+                // Apply per-monitor/per-item settings
+                Opacity = _currentItem.Opacity;
+                Volume = _currentItem.Volume;
+                
+                // Stop the current video before changing source to ensure MediaEnded fires reliably
+                // This fixes an issue where MediaEnded doesn't fire on secondary monitors
+                RequestStopBeforeSourceChange?.Invoke(this, EventArgs.Empty);
+                
+                // Set the expected source before changing CurrentSource
+                // This allows OnMediaOpened to verify the opened media matches what we expect
+                var newSource = new Uri(path, UriKind.Absolute);
+                
+                // Set expected source inside lock for thread safety
+                lock (_loadLock) {
+                    _expectedSource = newSource;
+                }
+                
+                // Set the source - MediaOpened event will trigger playback
+                CurrentSource = newSource;
+                
+                // Don't call RequestPlay here - wait for MediaOpened to confirm successful load
+                // This prevents timing issues where Play() is called before MediaElement is ready
+            } catch (Exception ex) {
+                Logger.Error("Error in LoadCurrentVideo()", ex);
+                // Reset loading flag before calling PlayNext() recursively
+                lock (_loadLock) {
+                    _isLoading = false;
+                }
+                // Try next video on error
+                // PlayNext() will check loading state and proceed safely
+                PlayNext();
             }
         }
 
@@ -115,17 +224,68 @@ namespace TrainMeX.ViewModels {
 
         public void OnMediaEnded() {
             _consecutiveFailures = 0; // Reset failure counter on successful playback
+            
+            // Clear failure count for this file since it played successfully
+            if (_currentItem?.FilePath != null && _fileFailureCounts.ContainsKey(_currentItem.FilePath)) {
+                _fileFailureCounts.Remove(_currentItem.FilePath);
+            }
+            
             PlayNext();
+        }
+        
+        public void OnMediaOpened() {
+            // Verify that the opened media matches what we're expecting
+            // This prevents stale MediaOpened events from previous sources after SetQueue() changes
+            lock (_loadLock) {
+                // If CurrentSource doesn't match expected source, this is a stale event - ignore it
+                if (_expectedSource == null || CurrentSource != _expectedSource) {
+                    Logger.Warning("OnMediaOpened called for stale source, ignoring");
+                    return;
+                }
+                
+                // Reset loading flag when media successfully opens
+                // This must be done in a lock to ensure thread safety
+                _isLoading = false;
+            }
+            
+            // Reset failure counter when video successfully opens
+            _consecutiveFailures = 0;
+            
+            // Clear failure count for this file since it opened successfully
+            if (_currentItem?.FilePath != null && _fileFailureCounts.ContainsKey(_currentItem.FilePath)) {
+                _fileFailureCounts.Remove(_currentItem.FilePath);
+            }
+            
+            // Request play now that media is confirmed loaded
+            // This ensures Play() is only called after MediaElement has processed the source
+            RequestPlay?.Invoke(this, EventArgs.Empty);
         }
 
         public void OnMediaFailed(Exception ex) {
+            // Reset loading flag on failure
+            // This must be done in a lock to ensure thread safety
+            lock (_loadLock) {
+                _isLoading = false;
+            }
+            
             var fileName = _currentItem?.FileName ?? "Unknown";
+            var filePath = _currentItem?.FilePath;
             var errorMessage = $"Failed to play video: {fileName}";
             
             Logger.Error(errorMessage, ex);
             
-            // Increment failure counter
+            // Increment failure counters
             _consecutiveFailures++;
+            
+            // Track failures per file
+            if (filePath != null) {
+                if (!_fileFailureCounts.ContainsKey(filePath)) {
+                    _fileFailureCounts[filePath] = 0;
+                }
+                _fileFailureCounts[filePath]++;
+                
+                Logger.Warning($"File '{fileName}' has failed {_fileFailureCounts[filePath]} time(s). Will skip after {MaxFailuresPerFile} failures.");
+            }
             
             // Notify listeners (e.g., UI) about the error
             MediaErrorOccurred?.Invoke(this, new MediaErrorEventArgs($"{errorMessage}. Error: {ex?.Message ?? "Unknown error"}"));

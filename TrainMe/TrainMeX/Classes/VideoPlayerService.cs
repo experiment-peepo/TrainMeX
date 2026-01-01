@@ -68,17 +68,6 @@ namespace TrainMeX.Classes {
         }
 
         /// <summary>
-        /// Plays videos on the specified screens (synchronous wrapper for backwards compatibility)
-        /// </summary>
-        /// <param name="files">Video files to play</param>
-        /// <param name="screens">Screens to play on</param>
-        [Obsolete("Use PlayOnScreensAsync instead to avoid potential deadlocks")]
-        public void PlayOnScreens(IEnumerable<VideoItem> files, IEnumerable<ScreenViewer> screens) {
-            // Use ConfigureAwait(false) to avoid deadlock if called from UI thread
-            PlayOnScreensAsync(files, screens).ConfigureAwait(false).GetAwaiter().GetResult();
-        }
-
-        /// <summary>
         /// Pauses all currently playing videos
         /// </summary>
         public void PauseAll() {
@@ -170,16 +159,6 @@ namespace TrainMeX.Classes {
 
                 players.Add(w);
             }
-        }
-
-        /// <summary>
-        /// Plays videos on specific monitors with per-monitor assignments (synchronous wrapper for backwards compatibility)
-        /// </summary>
-        /// <param name="assignments">Dictionary mapping screens to their video playlists</param>
-        [Obsolete("Use PlayPerMonitorAsync instead to avoid potential deadlocks")]
-        public void PlayPerMonitor(IDictionary<ScreenViewer, IEnumerable<VideoItem>> assignments) {
-            // Use ConfigureAwait(false) to avoid deadlock if called from UI thread
-            PlayPerMonitorAsync(assignments).ConfigureAwait(false).GetAwaiter().GetResult();
         }
 
         private async System.Threading.Tasks.Task<IEnumerable<VideoItem>> NormalizeItemsAsync(IEnumerable<VideoItem> files) {
