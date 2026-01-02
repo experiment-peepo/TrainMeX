@@ -40,7 +40,7 @@ jobs:
       
     - name: Test Publish
       run: |
-        dotnet publish TrainMe\TrainMeX\TrainMeX.csproj `
+        dotnet publish TrainMeX\TrainMeX.csproj `
           -c Release `
           -r win-x64 `
           --self-contained true `
