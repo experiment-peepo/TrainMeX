@@ -11,7 +11,9 @@
 *.sln.docstates
 TrainMeX/Videos
 
-# Application runtime-generated user files
+# Application runtime-generated user files (ignore at any directory level)
+**/settings.json
+**/session.json
 settings.json
 session.json
 
