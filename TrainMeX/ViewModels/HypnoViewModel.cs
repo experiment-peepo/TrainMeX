@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -14,11 +15,13 @@ namespace TrainMeX.ViewModels {
         private int _currentPos = 0;
         private int _consecutiveFailures = 0;
         private const int MaxConsecutiveFailures = 10; // Stop retrying after 10 consecutive failures
-        private Dictionary<string, int> _fileFailureCounts = new Dictionary<string, int>(); // Track failures per file
+        private ConcurrentDictionary<string, int> _fileFailureCounts = new ConcurrentDictionary<string, int>(); // Track failures per file (thread-safe)
         private const int MaxFailuresPerFile = 3; // Skip a file after 3 failures
         private bool _isLoading = false; // Prevent concurrent LoadCurrentVideo() calls
         private readonly object _loadLock = new object(); // Lock for loading operations
         private Uri _expectedSource = null; // Track the source we're expecting MediaOpened for
+        private int _recursionDepth = 0; // Track recursion depth to prevent stack overflow
+        private const int MaxRecursionDepth = 50; // Maximum recursion depth before aborting
         
         private Uri _currentSource;
         public Uri CurrentSource {
@@ -65,6 +68,8 @@ namespace TrainMeX.ViewModels {
                 }
                 // Reset loading state when queue changes
                 _isLoading = false;
+                // Reset recursion depth when queue changes
+                _recursionDepth = 0;
             }
             
             // Materialize to array for indexed access - this is necessary for PlayNext() logic
@@ -138,7 +143,17 @@ namespace TrainMeX.ViewModels {
                     Logger.Warning("LoadCurrentVideo() called while already loading, skipping");
                     return;
                 }
-                _isLoading = true;
+                _isLoading = true; // Set flag inside lock to prevent race condition
+                
+                // Check recursion depth to prevent stack overflow
+                _recursionDepth++;
+                if (_recursionDepth > MaxRecursionDepth) {
+                    Logger.Error($"Maximum recursion depth ({MaxRecursionDepth}) exceeded in LoadCurrentVideo. Stopping playback.");
+                    _isLoading = false;
+                    _recursionDepth = 0;
+                    MediaErrorOccurred?.Invoke(this, new MediaErrorEventArgs("Playback stopped due to excessive errors. Please check your video files."));
+                    return;
+                }
             }
 
             try {
@@ -149,6 +164,7 @@ namespace TrainMeX.ViewModels {
                 if (_files == null || _files.Length == 0 || _currentPos < 0 || _currentPos >= _files.Length) {
                     lock (_loadLock) {
                         _isLoading = false;
+                        _recursionDepth = Math.Max(0, _recursionDepth - 1); // Decrement on exit
                     }
                     return;
                 }
@@ -165,6 +181,7 @@ namespace TrainMeX.ViewModels {
                         Logger.Warning($"URL validation failed for '{_currentItem.FileName}': {urlValidationError}. Skipping to next video.");
                         lock (_loadLock) {
                             _isLoading = false;
+                            _recursionDepth = Math.Max(0, _recursionDepth - 1); // Decrement before recursive call
                         }
                         PlayNext();
                         return;
@@ -174,6 +191,7 @@ namespace TrainMeX.ViewModels {
                     if (!Path.IsPathRooted(path)) {
                         lock (_loadLock) {
                             _isLoading = false;
+                            _recursionDepth = Math.Max(0, _recursionDepth - 1); // Decrement on exit
                         }
                         return;
                     }
@@ -185,6 +203,7 @@ namespace TrainMeX.ViewModels {
                         // Reset loading flag before calling PlayNext() recursively
                         lock (_loadLock) {
                             _isLoading = false;
+                            _recursionDepth = Math.Max(0, _recursionDepth - 1); // Decrement before recursive call
                         }
                         // Skip to next video instead of failing
                         // PlayNext() will check loading state and proceed safely
@@ -218,6 +237,13 @@ namespace TrainMeX.ViewModels {
                     _expectedSource = newSource;
                 }
                 
+                // CRITICAL FIX for single-video looping:
+                // If the new source is the same as current source, MediaElement won't fire MediaOpened
+                // To force reload, set source to null first
+                if (CurrentSource != null && CurrentSource.Equals(newSource)) {
+                    CurrentSource = null; // Clear source to force reload
+                }
+                
                 // Set the source - MediaOpened event will trigger playback
                 CurrentSource = newSource;
                 
@@ -228,6 +254,7 @@ namespace TrainMeX.ViewModels {
                 // Reset loading flag before calling PlayNext() recursively
                 lock (_loadLock) {
                     _isLoading = false;
+                    _recursionDepth = Math.Max(0, _recursionDepth - 1); // Decrement before recursive call
                 }
                 // Try next video on error
                 // PlayNext() will check loading state and proceed safely
@@ -247,9 +274,14 @@ namespace TrainMeX.ViewModels {
         public void OnMediaEnded() {
             _consecutiveFailures = 0; // Reset failure counter on successful playback
             
-            // Clear failure count for this file since it played successfully
-            if (_currentItem?.FilePath != null && _fileFailureCounts.ContainsKey(_currentItem.FilePath)) {
-                _fileFailureCounts.Remove(_currentItem.FilePath);
+            // Clear failure count for this file since it played successfully (thread-safe)
+            if (_currentItem?.FilePath != null) {
+                _fileFailureCounts.TryRemove(_currentItem.FilePath, out _);
+            }
+            
+            // Reset recursion depth on successful completion
+            lock (_loadLock) {
+                _recursionDepth = 0;
             }
             
             PlayNext();
@@ -268,14 +300,16 @@ namespace TrainMeX.ViewModels {
                 // Reset loading flag when media successfully opens
                 // This must be done in a lock to ensure thread safety
                 _isLoading = false;
+                // Reset recursion depth on successful load
+                _recursionDepth = 0;
             }
             
             // Reset failure counter when video successfully opens
             _consecutiveFailures = 0;
             
-            // Clear failure count for this file since it opened successfully
-            if (_currentItem?.FilePath != null && _fileFailureCounts.ContainsKey(_currentItem.FilePath)) {
-                _fileFailureCounts.Remove(_currentItem.FilePath);
+            // Clear failure count for this file since it opened successfully (thread-safe)
+            if (_currentItem?.FilePath != null) {
+                _fileFailureCounts.TryRemove(_currentItem.FilePath, out _);
             }
             
             // Request play now that media is confirmed loaded
@@ -299,14 +333,10 @@ namespace TrainMeX.ViewModels {
             // Increment failure counters
             _consecutiveFailures++;
             
-            // Track failures per file
+            // Track failures per file (thread-safe with ConcurrentDictionary)
             if (filePath != null) {
-                if (!_fileFailureCounts.ContainsKey(filePath)) {
-                    _fileFailureCounts[filePath] = 0;
-                }
-                _fileFailureCounts[filePath]++;
-                
-                Logger.Warning($"File '{fileName}' has failed {_fileFailureCounts[filePath]} time(s). Will skip after {MaxFailuresPerFile} failures.");
+                int failureCount = _fileFailureCounts.AddOrUpdate(filePath, 1, (key, oldValue) => oldValue + 1);
+                Logger.Warning($"File '{fileName}' has failed {failureCount} time(s). Will skip after {MaxFailuresPerFile} failures.");
             }
             
             // Notify listeners (e.g., UI) about the error

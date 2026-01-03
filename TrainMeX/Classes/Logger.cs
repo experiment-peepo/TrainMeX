@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 
@@ -9,6 +10,8 @@ namespace TrainMeX.Classes {
     public static class Logger {
         private static readonly object _lock = new object();
         private static string _logFilePath;
+        private static int _consecutiveFailures = 0;
+        private const int MaxConsecutiveFailures = 10; // Stop trying file logging after this many failures
 
         static Logger() {
             _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TrainMeX.log");
@@ -50,10 +53,29 @@ namespace TrainMeX.Classes {
                     
                     logEntry += Environment.NewLine;
                     
-                    File.AppendAllText(_logFilePath, logEntry);
+                    // Try to write to file if we haven't exceeded failure limit
+                    if (_consecutiveFailures < MaxConsecutiveFailures) {
+                        try {
+                            File.AppendAllText(_logFilePath, logEntry);
+                            _consecutiveFailures = 0; // Reset on success
+                        } catch (Exception fileEx) {
+                            _consecutiveFailures++;
+                            // Fallback to Debug output when file logging fails
+                            Debug.WriteLine($"[LOGGER FILE ERROR] Failed to write to log file ({_consecutiveFailures}/{MaxConsecutiveFailures}): {fileEx.Message}");
+                            Debug.WriteLine($"[FALLBACK LOG] {logEntry.TrimEnd()}");
+                        }
+                    } else {
+                        // File logging has failed too many times, use Debug output only
+                        Debug.WriteLine($"[FALLBACK LOG] {logEntry.TrimEnd()}");
+                    }
                 }
-            } catch {
-                // Silently fail if logging fails to avoid infinite loops
+            } catch (Exception ex) {
+                // Last resort: try Debug.WriteLine without any formatting
+                try {
+                    Debug.WriteLine($"[LOGGER CRITICAL ERROR] {message} | Exception: {ex.Message}");
+                } catch {
+                    // Absolutely nothing we can do at this point
+                }
             }
         }
     }
