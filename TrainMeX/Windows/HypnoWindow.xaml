@@ -18,6 +18,7 @@
         mc:Ignorable="d"
         Title="TrainMeX Hypnosis Video Player" Height="450" Width="800"
         WindowStyle="None" WindowState="Normal" Topmost="True"
+        ResizeMode="NoResize"
         WindowStartupLocation="Manual"
         Background="{x:Null}"
         AllowsTransparency="True"
@@ -29,7 +30,7 @@
             IsHitTestVisible="False"
             x:Name="FirstVideo"
             Source="{Binding CurrentSource}"
-            Stretch="UniformToFill"
+            Stretch="Uniform"
             LoadedBehavior="Manual"
             UnloadedBehavior="Manual"
             MediaEnded="FirstVideo_MediaEnded"
@@ -37,12 +38,8 @@
             MediaOpened="FirstVideo_MediaOpened"
             Volume="{Binding Volume}"
             ScrubbingEnabled="False"
-            RenderOptions.BitmapScalingMode="LowQuality"
-            >
-            <MediaElement.CacheMode>
-                <BitmapCache RenderAtScale="1" EnableClearType="False"/>
-            </MediaElement.CacheMode>
-        </MediaElement>
+            RenderOptions.BitmapScalingMode="HighQuality"
+            />
 
         <!-- Controls Removed as per user request -->
     </Grid>

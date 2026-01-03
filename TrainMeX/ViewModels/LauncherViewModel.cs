@@ -58,19 +58,11 @@ namespace TrainMeX.ViewModels {
             set => SetProperty(ref _isDehypnotizeEnabled, value);
         }
 
-        private bool _isPauseEnabled;
-        public bool IsPauseEnabled {
-            get => _isPauseEnabled;
-            set => SetProperty(ref _isPauseEnabled, value);
-        }
 
-        private string _pauseButtonText = "Pause";
-        public string PauseButtonText {
-            get => _pauseButtonText;
-            set => SetProperty(ref _pauseButtonText, value);
-        }
 
-        private bool _pauseClicked;
+
+
+
         private bool _allFilesAssigned = false;
         private string _statusMessage;
         private StatusMessageType _statusMessageType = StatusMessageType.Info;
@@ -101,7 +93,7 @@ namespace TrainMeX.ViewModels {
 
         public ICommand HypnotizeCommand { get; }
         public ICommand DehypnotizeCommand { get; }
-        public ICommand PauseCommand { get; }
+
         public ICommand BrowseCommand { get; }
         public ICommand AddUrlCommand { get; }
         public ICommand ImportPlaylistCommand { get; }
@@ -112,6 +104,8 @@ namespace TrainMeX.ViewModels {
 
         private System.Windows.Threading.DispatcherTimer _saveTimer;
         private CancellationTokenSource _cancellationTokenSource;
+        private readonly SemaphoreSlim _saveSemaphore = new SemaphoreSlim(1, 1);
+        private bool _isHypnotizing = false;
         private readonly VideoUrlExtractor _urlExtractor;
         private readonly PlaylistImporter _playlistImporter;
 
@@ -123,7 +117,7 @@ namespace TrainMeX.ViewModels {
 
             HypnotizeCommand = new RelayCommand(Hypnotize, _ => IsHypnotizeEnabled);
             DehypnotizeCommand = new RelayCommand(Dehypnotize);
-            PauseCommand = new RelayCommand(Pause);
+
             BrowseCommand = new RelayCommand(Browse);
             AddUrlCommand = new RelayCommand(AddUrl);
             ImportPlaylistCommand = new RelayCommand(ImportPlaylist);
@@ -251,6 +245,8 @@ namespace TrainMeX.ViewModels {
                 _screensCacheTime = DateTime.Now;
                 
                 AvailableScreens.Clear();
+                // Add "All Monitors" option first
+                AvailableScreens.Add(ScreenViewer.CreateAllScreens());
                 foreach (var s in screens) {
                     AvailableScreens.Add(s);
                 }
@@ -304,8 +300,9 @@ namespace TrainMeX.ViewModels {
                 }
             }
             
-            // Fall back to primary screen, or first available if no primary
-            return AvailableScreens.FirstOrDefault(v => v.Screen.Primary) ?? AvailableScreens.FirstOrDefault();
+            // Fall back to primary screen, or first available REAL screen if no primary
+            return AvailableScreens.FirstOrDefault(v => v.Screen != null && v.Screen.Primary) 
+                ?? AvailableScreens.FirstOrDefault(v => !v.IsAllScreens);
         }
 
         private void UpdateButtons() {
@@ -319,32 +316,54 @@ namespace TrainMeX.ViewModels {
         }
 
         private void Hypnotize(object parameter) {
-            var selectedItems = parameter as System.Collections.IList;
-            var assignments = BuildAssignmentsFromSelection(selectedItems);
-            if (assignments == null || assignments.Count == 0) return;
-            
-            // Use async version to avoid deadlocks
-            _ = PlayPerMonitorAsync(assignments).ContinueWith(task => {
-                if (task.IsFaulted) {
-                    var ex = task.Exception?.GetBaseException() ?? task.Exception;
-                    Logger.Error("Error starting playback", ex);
-                    Application.Current?.Dispatcher.InvokeAsync(() => {
-                        SetStatusMessage($"Error starting playback: {ex?.Message ?? "Unknown error"}", StatusMessageType.Error);
-                    });
-                } else {
-                    Application.Current?.Dispatcher.InvokeAsync(() => {
-                        IsDehypnotizeEnabled = true;
-                        IsPauseEnabled = true;
-                    });
+            if (_isHypnotizing) return;
+            _isHypnotizing = true;
+
+            try {
+                var selectedItems = parameter as System.Collections.IList;
+                var (assignments, isAllMonitors) = BuildAssignmentsFromSelection(selectedItems);
+                
+                // Handle null assignments from BuildAssignmentsFromSelection
+                if (assignments == null) {
+                    SetStatusMessage("No valid video assignments could be built.", StatusMessageType.Error);
+                    return;
                 }
-            }, TaskContinuationOptions.ExecuteSynchronously);
+
+                int totalItems = assignments.Values.Sum(v => v.Count());
+                Logger.Info($"Hypnotize called. Queuing {totalItems} items across {assignments.Count} screens.");
+                
+                if (assignments.Count == 0) {
+                    SetStatusMessage("No screen assigned for the selected video(s)", StatusMessageType.Error);
+                    return;
+                }
+
+                // Use async version to avoid deadlocks
+                _ = PlayPerMonitorAsync(assignments, isAllMonitors).ContinueWith(task => {
+                    _isHypnotizing = false;
+                    if (task.IsFaulted) {
+                        var ex = task.Exception?.GetBaseException() ?? task.Exception;
+                        Logger.Error("Error starting playback", ex);
+                        Application.Current?.Dispatcher.InvokeAsync(() => {
+                            SetStatusMessage($"Error starting playback: {ex?.Message ?? "Unknown error"}", StatusMessageType.Error);
+                        });
+                    } else {
+                        Application.Current?.Dispatcher.InvokeAsync(() => {
+                            IsDehypnotizeEnabled = true;
+
+                        });
+                    }
+                }, TaskContinuationOptions.ExecuteSynchronously);
+            } catch (Exception ex) {
+                _isHypnotizing = false;
+                Logger.Error("Unexpected error in Hypnotize", ex);
+            }
         }
 
-        private async Task PlayPerMonitorAsync(IDictionary<ScreenViewer, IEnumerable<VideoItem>> assignments) {
-            await App.VideoService.PlayPerMonitorAsync(assignments).ConfigureAwait(false);
+        private async Task PlayPerMonitorAsync(IDictionary<ScreenViewer, IEnumerable<VideoItem>> assignments, bool showGroupControl) {
+            await App.VideoService.PlayPerMonitorAsync(assignments, showGroupControl).ConfigureAwait(false);
         }
 
-        private Dictionary<ScreenViewer, IEnumerable<VideoItem>> BuildAssignmentsFromSelection(System.Collections.IList selectedItems) {
+        private (Dictionary<ScreenViewer, IEnumerable<VideoItem>> Assignments, bool HasAllMonitors) BuildAssignmentsFromSelection(System.Collections.IList selectedItems) {
             var selectedFiles = new List<VideoItem>();
             if (selectedItems != null && selectedItems.Count > 0) {
                 foreach (VideoItem f in selectedItems) selectedFiles.Add(f);
@@ -352,10 +371,10 @@ namespace TrainMeX.ViewModels {
                 foreach (var f in AddedFiles) selectedFiles.Add(f);
             }
 
-            if (selectedFiles.Count < 1) return null;
+            if (selectedFiles.Count < 1) return (null, false);
 
             // Simple validation again just in case
-            if (selectedFiles.Any(x => x.AssignedScreen == null)) return null;
+            if (selectedFiles.Any(x => x.AssignedScreen == null)) return (null, false);
 
             if (Shuffle) {
                 // Fisher-Yates shuffle - O(n) instead of O(n log n)
@@ -368,32 +387,49 @@ namespace TrainMeX.ViewModels {
             }
 
             var assignments = new Dictionary<ScreenViewer, IEnumerable<VideoItem>>();
+            var allMonitorsItems = new List<VideoItem>();
+            
             foreach (var f in selectedFiles) {
                 var assigned = f.AssignedScreen;
                 if (assigned == null) continue;
-                if (!assignments.ContainsKey(assigned)) assignments[assigned] = new List<VideoItem>();
-                ((List<VideoItem>)assignments[assigned]).Add(f);
+                
+                if (assigned.IsAllScreens) {
+                    allMonitorsItems.Add(f);
+                } else {
+                    if (!assignments.ContainsKey(assigned)) assignments[assigned] = new List<VideoItem>();
+                    ((List<VideoItem>)assignments[assigned]).Add(f);
+                }
             }
-            return assignments;
+            
+            // If we have "All Monitors" items, add them to ALL assigned screens
+            // OR if only "All Monitors" items exist, add them to ALL available screens
+            if (allMonitorsItems.Count > 0) {
+                var targetScreens = assignments.Keys.ToList();
+                
+                // If no specific screens are assigned, use all available screens (excluding the "All Monitors" placeholder itself)
+                if (targetScreens.Count == 0) {
+                    targetScreens = AvailableScreens.Where(s => !s.IsAllScreens).ToList();
+                }
+                
+                foreach (var screen in targetScreens) {
+                    if (!assignments.ContainsKey(screen)) assignments[screen] = new List<VideoItem>();
+                    var list = (List<VideoItem>)assignments[screen];
+                    // Add items from allMonitorsItems, but respect original sequence if possible
+                    // Here we just append them
+                    list.AddRange(allMonitorsItems);
+                }
+            }
+            
+            return (assignments, allMonitorsItems.Count > 0);
         }
 
         private void Dehypnotize(object obj) {
             IsDehypnotizeEnabled = false;
-            IsPauseEnabled = false;
+
             App.VideoService.StopAll();
         }
 
-        private void Pause(object obj) {
-            if (_pauseClicked) {
-                _pauseClicked = false;
-                PauseButtonText = "Pause";
-                App.VideoService.ContinueAll();
-            } else {
-                _pauseClicked = true;
-                PauseButtonText = "Continue";
-                App.VideoService.PauseAll();
-            }
-        }
+
 
         private void Browse(object obj) {
             // Safely execute async code from void command handler
@@ -749,7 +785,7 @@ namespace TrainMeX.ViewModels {
 
         private void Exit(object obj) {
             if (MessageBox.Show("Exit program? All hypnosis will be terminated :(", "Exit program", MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
-                SaveSession();
+                SaveSession(runInBackground: false);
                 Application.Current.Shutdown();
             }
         }
@@ -920,8 +956,9 @@ namespace TrainMeX.ViewModels {
                 });
             }
         }
-        private void SaveSession() {
+        private void SaveSession(bool runInBackground = true) {
             try {
+                // Take a snapshot of the playlist items to avoid cross-thread issues
                 var playlistItems = AddedFiles.Select(item => new PlaylistItem {
                     FilePath = item.FilePath,
                     ScreenDeviceName = item.AssignedScreen?.DeviceName,
@@ -930,16 +967,29 @@ namespace TrainMeX.ViewModels {
                     Title = item.Title // Save title if available
                 }).ToList();
 
-                System.Threading.Tasks.Task.Run(() => {
+                Action saveAction = () => {
+                    if (!_saveSemaphore.Wait(0)) {
+                        Logger.Info("SaveSession: Another save in progress, skipping");
+                        return;
+                    }
+
                     try {
                         var playlist = new Playlist { Items = playlistItems };
                         var json = System.Text.Json.JsonSerializer.Serialize(playlist);
                         var path = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "session.json");
                         System.IO.File.WriteAllText(path, json);
                     } catch (Exception ex) {
-                        Logger.Error("Failed to save session in background", ex);
+                        Logger.Error("Failed to save session", ex);
+                    } finally {
+                        _saveSemaphore.Release();
                     }
-                });
+                };
+
+                if (runInBackground) {
+                    System.Threading.Tasks.Task.Run(saveAction);
+                } else {
+                    saveAction();
+                }
             } catch (Exception ex) {
                 Logger.Error("Failed to create session snapshot", ex);
             }

@@ -36,6 +36,8 @@ namespace TrainMeX.Classes {
                 throw new ArgumentException("Playlist URL cannot be empty", nameof(playlistUrl));
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var videoItems = new List<VideoItem>();
 
             try {
@@ -257,7 +259,7 @@ namespace TrainMeX.Classes {
 
                 // Pattern: Look for <a> tags with href pointing to video pages
                 // Hypnotube typically uses /videos/ or /video/ paths, often ending with .html
-                var linkPattern = @"<a[^>]+href\s*=\s*[""']([^""']+)[""'][^>]*>";
+                var linkPattern = @"<a[^>]*href\s*=\s*[""']([^""']+)[""'][^>]*>";
                 var linkMatches = Regex.Matches(html, linkPattern, RegexOptions.IgnoreCase);
 
                 foreach (Match match in linkMatches) {
@@ -313,7 +315,7 @@ namespace TrainMeX.Classes {
 
                 // Pattern: Look for <a> tags with href pointing to video pages
                 // RULE34Video typically uses /videos/ paths with numeric IDs
-                var linkPattern = @"<a[^>]+href\s*=\s*[""']([^""']+)[""'][^>]*>";
+                var linkPattern = @"<a[^>]*href\s*=\s*[""']([^""']+)[""'][^>]*>";
                 var linkMatches = Regex.Matches(html, linkPattern, RegexOptions.IgnoreCase);
 
                 foreach (Match match in linkMatches) {
@@ -370,7 +372,7 @@ namespace TrainMeX.Classes {
 
                 // Pattern: Look for <a> tags with href pointing to video pages
                 // PMVHaven typically uses /video/ paths (singular)
-                var linkPattern = @"<a[^>]+href\s*=\s*[""']([^""']+)[""'][^>]*>";
+                var linkPattern = @"<a[^>]*href\s*=\s*[""']([^""']+)[""'][^>]*>";
                 var linkMatches = Regex.Matches(html, linkPattern, RegexOptions.IgnoreCase);
 
                 foreach (Match match in linkMatches) {
@@ -429,11 +431,11 @@ namespace TrainMeX.Classes {
                 var excludedExtensions = new[] { 
                     ".css", ".jpg", ".jpeg", ".png", ".gif", ".js", ".json", ".xml", ".ico", 
                     ".svg", ".woff", ".woff2", ".ttf", ".eot", ".pdf", ".zip", ".rar", 
-                    ".txt", ".md", ".html", ".htm" 
+                    ".txt", ".md" 
                 };
 
                 // Pattern 1: Look for <a> tags with href pointing to video pages
-                var linkPattern = @"<a[^>]+href\s*=\s*[""']([^""']+)[""'][^>]*>";
+                var linkPattern = @"<a[^>]*href\s*=\s*[""']([^""']+)[""'][^>]*>";
                 var linkMatches = Regex.Matches(html, linkPattern, RegexOptions.IgnoreCase);
 
                 foreach (Match match in linkMatches) {
@@ -518,15 +520,14 @@ namespace TrainMeX.Classes {
                     return false;
                 }
 
-                // Exclude direct video file URLs
-                var videoExtensions = Constants.VideoExtensions;
-                if (videoExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) {
-                    return false;
+                // Direct video file URLs are allowed (will be returned as-is by Extractor)
+                if (Constants.VideoExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) {
+                    return true;
                 }
 
                 // Hypnotube video pages: /videos/ID or /video/ID pattern, often ending with .html
                 // Allow video indicators anywhere in path (not just at start)
-                if (path.Contains("/videos/") || path.Contains("/video/")) {
+                if (path.Contains("/videos") || path.Contains("/video")) {
                     var pathSegments = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
                     if (pathSegments.Length >= 2) {
                         var lastSegment = pathSegments[pathSegments.Length - 1];
@@ -704,15 +705,14 @@ namespace TrainMeX.Classes {
                     return false;
                 }
 
-                // Exclude direct video file URLs
-                var videoExtensions = Constants.VideoExtensions;
-                if (videoExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) {
-                    return false;
+                // Direct video file URLs are allowed
+                if (Constants.VideoExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) {
+                    return true;
                 }
 
                 // PMVHaven video pages: /video/ID pattern (singular, not plural)
                 // Allow video indicators anywhere in path (not just at start)
-                if (path.Contains("/video/") || path.Contains("/videos/")) {
+                if (path.Contains("/video") || path.Contains("/videos")) {
                     var pathSegments = path.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
                     if (pathSegments.Length >= 2) {
                         var lastSegment = pathSegments[pathSegments.Length - 1];
@@ -792,10 +792,9 @@ namespace TrainMeX.Classes {
                     return false;
                 }
 
-                // Exclude direct video file URLs (those should be handled separately)
-                var videoExtensions = Constants.VideoExtensions;
-                if (videoExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) {
-                    return false;
+                // Direct video file URLs are allowed
+                if (Constants.VideoExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) {
+                    return true;
                 }
 
                 // Check if it looks like a video page (has /video/ or similar in path)

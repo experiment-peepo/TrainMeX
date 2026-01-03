@@ -198,6 +198,24 @@
                           Style="{StaticResource SettingsCheckBoxStyle}"
                           ToolTip="When enabled, the launcher window will stay on top of other windows"/>
             </Grid>
+
+            <!-- Opaque Mode -->
+            <Grid Margin="0,0,0,12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <Label Foreground="{StaticResource TextPrimary}" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,0,2">Opaque Mode</Label>
+                    <TextBlock Text="Force 100% opacity for all videos" 
+                               Foreground="{StaticResource TextTertiary}" FontSize="9" FontStyle="Italic"/>
+                </StackPanel>
+                <CheckBox x:Name="AlwaysOpaqueCheckBox" Grid.Column="1" 
+                          IsChecked="{Binding AlwaysOpaque}"
+                          VerticalAlignment="Center"
+                          Style="{StaticResource SettingsCheckBoxStyle}"
+                          ToolTip="When enabled, every video will play at 100% opacity, ignoring individual settings"/>
+            </Grid>
             
             <!-- Panic Hotkey -->
             <StackPanel Margin="0,0,0,15">

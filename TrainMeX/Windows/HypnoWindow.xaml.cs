@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Controls;
 using TrainMeX.Classes;
 using TrainMeX.ViewModels;
+using System.Diagnostics;
 
 namespace TrainMeX.Windows {
     [SupportedOSPlatform("windows")]
@@ -16,6 +17,7 @@ namespace TrainMeX.Windows {
         private HypnoViewModel _viewModel;
         private System.Windows.Forms.Screen _targetScreen;
         private bool _disposed = false;
+        private System.Windows.Threading.DispatcherTimer _syncTimer;
 
         public HypnoWindow(System.Windows.Forms.Screen targetScreen = null) {
             InitializeComponent();
@@ -32,6 +34,51 @@ namespace TrainMeX.Windows {
             _viewModel.RequestStop += ViewModel_RequestStop;
             _viewModel.RequestStopBeforeSourceChange += ViewModel_RequestStopBeforeSourceChange;
             _viewModel.MediaErrorOccurred += ViewModel_MediaErrorOccurred;
+            _viewModel.RequestSyncPosition += ViewModel_RequestSyncPosition;
+            _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+
+            // Initialize position reporting timer
+            _syncTimer = new System.Windows.Threading.DispatcherTimer();
+            _syncTimer.Interval = TimeSpan.FromMilliseconds(50);
+            _syncTimer.Tick += SyncTimer_Tick;
+            _syncTimer.Start();
+        }
+
+        private void ViewModel_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e) {
+            if (_disposed || FirstVideo == null) return;
+            if (e.PropertyName == nameof(HypnoViewModel.SpeedRatio)) {
+                try {
+                    Logger.Info($"Applying SpeedRatio: {_viewModel.SpeedRatio}");
+                    FirstVideo.SpeedRatio = _viewModel.SpeedRatio;
+                } catch (Exception ex) {
+                   Logger.Warning($"Failed to set SpeedRatio: {ex.Message}");
+                }
+            }
+        }
+
+        private void SyncTimer_Tick(object sender, EventArgs e) {
+            if (_disposed || FirstVideo == null || _viewModel == null) return;
+            try {
+                // Only report position if media is loaded and playing
+                if (FirstVideo.Source != null && FirstVideo.NaturalDuration.HasTimeSpan) {
+                    _viewModel.LastPositionRecord = (FirstVideo.Position, Stopwatch.GetTimestamp());
+                }
+            } catch {
+                // Ignore errors during position extraction
+            }
+        }
+
+        private void ViewModel_RequestSyncPosition(object sender, TimeSpan position) {
+            if (_disposed || FirstVideo == null) return;
+            try {
+                // Only sync if skew is significant (e.g. > 50ms) to avoid stuttering
+                var diff = Math.Abs((FirstVideo.Position - position).TotalMilliseconds);
+                if (diff > 50) {
+                    FirstVideo.Position = position;
+                }
+            } catch {
+                // Ignore sync errors
+            }
         }
         
         private void ViewModel_RequestPlay(object sender, EventArgs e) {
@@ -119,6 +166,13 @@ namespace TrainMeX.Windows {
                         _viewModel.RequestStop -= ViewModel_RequestStop;
                         _viewModel.RequestStopBeforeSourceChange -= ViewModel_RequestStopBeforeSourceChange;
                         _viewModel.MediaErrorOccurred -= ViewModel_MediaErrorOccurred;
+                        _viewModel.RequestSyncPosition -= ViewModel_RequestSyncPosition;
+                        _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
+                    }
+
+                    if (_syncTimer != null) {
+                        _syncTimer.Stop();
+                        _syncTimer = null;
                     }
                     
                     // Dispose MediaElement

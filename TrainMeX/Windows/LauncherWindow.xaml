@@ -409,13 +409,7 @@
                 </EventTrigger>
             </Button.Triggers>
         </Button>
-        <Button x:Name="PauseButton" 
-                Command="{Binding PauseCommand}" 
-                IsEnabled="{Binding IsPauseEnabled}" 
-                Content="{Binding PauseButtonText}" 
-                Style="{StaticResource SecondaryButtonStyle}" 
-                ToolTip="Pause or resume video playback"
-                Grid.Row="9" />
+
         <!-- Active Playback Controls -->
         <StackPanel Grid.Row="10" Margin="0,5,0,10" Visibility="{Binding HasActivePlayers, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Label Style="{StaticResource LowerTitle}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5">Active Sessions</Label>

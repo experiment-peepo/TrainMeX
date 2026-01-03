@@ -16,6 +16,7 @@ namespace TrainMeX.Classes {
         // Modifiers: Ctrl=2, Shift=4, Alt=1 (can be combined with bitwise OR)
         public uint PanicHotkeyModifiers { get; set; } = 0x0002 | 0x0004; // Ctrl+Shift (default)
         public string PanicHotkeyKey { get; set; } = "End"; // Default key
+        public bool AlwaysOpaque { get; set; } = false;
 
 
 

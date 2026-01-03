@@ -158,7 +158,7 @@ namespace TrainMeX.Tests {
         }
 
         [Fact]
-        public void PanicHotkeyDisplay_WithNoModifiers_ShowsNone() {
+        public void PanicHotkeyDisplay_WithNoModifiers_ShowsKeyOnly() {
             // Arrange
             SettingsViewModel viewModel;
             try {
@@ -175,8 +175,8 @@ namespace TrainMeX.Tests {
 
             // Assert
             var display = viewModel.PanicHotkeyDisplay;
-            Assert.Contains("None", display);
-            Assert.Contains("End", display);
+            Assert.DoesNotContain("None", display);
+            Assert.Equal("End", display);
         }
 
         [Fact]

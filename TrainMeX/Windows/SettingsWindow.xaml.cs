@@ -15,6 +15,7 @@ namespace TrainMeX.Windows {
                 if (Owner is LauncherWindow launcherWindow) {
                     launcherWindow.ReloadHotkeys();
                     launcherWindow.ApplyAlwaysOnTopSetting();
+                    App.VideoService.RefreshAllOpacities();
                 }
                 this.Close();
             };

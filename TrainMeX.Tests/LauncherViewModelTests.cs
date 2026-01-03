@@ -101,7 +101,6 @@ namespace TrainMeX.Tests {
                 
                 Assert.NotNull(viewModel.HypnotizeCommand);
                 Assert.NotNull(viewModel.DehypnotizeCommand);
-                Assert.NotNull(viewModel.PauseCommand);
                 Assert.NotNull(viewModel.BrowseCommand);
                 Assert.NotNull(viewModel.RemoveSelectedCommand);
                 Assert.NotNull(viewModel.ClearAllCommand);

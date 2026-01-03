@@ -19,6 +19,7 @@ namespace TrainMeX.ViewModels {
         private bool _panicHotkeyAlt;
         private string _panicHotkeyKey;
         private ScreenViewer _selectedDefaultMonitor;
+        private bool _alwaysOpaque;
 
         // Modifier flags
         private const uint MOD_CONTROL = 0x0002;
@@ -39,9 +40,7 @@ namespace TrainMeX.ViewModels {
             _panicHotkeyShift = (settings.PanicHotkeyModifiers & MOD_SHIFT) != 0;
             _panicHotkeyAlt = (settings.PanicHotkeyModifiers & MOD_ALT) != 0;
             _panicHotkeyKey = settings.PanicHotkeyKey ?? "End";
-
-            _panicHotkeyKey = settings.PanicHotkeyKey ?? "End";
-
+            _alwaysOpaque = settings.AlwaysOpaque;
 
 
             // Load available monitors
@@ -61,6 +60,9 @@ namespace TrainMeX.ViewModels {
         private void RefreshAvailableMonitors() {
             AvailableMonitors.Clear();
             try {
+                // Add "All Screens" option first
+                AvailableMonitors.Add(ScreenViewer.CreateAllScreens());
+                
                 var screens = WindowServices.GetAllScreenViewers();
                 foreach (var screen in screens) {
                     AvailableMonitors.Add(screen);
@@ -135,10 +137,15 @@ namespace TrainMeX.ViewModels {
                 if (PanicHotkeyCtrl) parts.Add("Ctrl");
                 if (PanicHotkeyShift) parts.Add("Shift");
                 if (PanicHotkeyAlt) parts.Add("Alt");
-                if (parts.Count == 0) parts.Add("None");
+                
                 parts.Add(PanicHotkeyKey ?? "End");
                 return string.Join("+", parts);
             }
+        }
+
+        public bool AlwaysOpaque {
+            get => _alwaysOpaque;
+            set => SetProperty(ref _alwaysOpaque, value);
         }
 
         public ICommand OkCommand { get; }
@@ -164,6 +171,7 @@ namespace TrainMeX.ViewModels {
             if (PanicHotkeyAlt) modifiers |= MOD_ALT;
             settings.PanicHotkeyModifiers = modifiers;
             settings.PanicHotkeyKey = PanicHotkeyKey ?? "End";
+            settings.AlwaysOpaque = AlwaysOpaque;
             
 
             

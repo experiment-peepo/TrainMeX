@@ -44,6 +44,11 @@ namespace TrainMeX.Classes {
                 var uri = new Uri(normalizedUrl);
                 var host = uri.Host.ToLowerInvariant();
                 
+                // If it's already a direct video URL, return it immediately
+                if (Constants.VideoExtensions.Any(ext => uri.AbsolutePath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) {
+                    return normalizedUrl;
+                }
+                
                 string videoUrl = null;
                 
                 if (host.Contains("hypnotube.com")) {
