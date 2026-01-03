@@ -28,6 +28,9 @@ namespace TrainMeX.ViewModels {
     public class LauncherViewModel : ObservableObject, IDisposable {
         public ObservableCollection<VideoItem> AddedFiles { get; } = new ObservableCollection<VideoItem>();
         public ObservableCollection<ScreenViewer> AvailableScreens { get; } = new ObservableCollection<ScreenViewer>();
+        public ObservableCollection<ActivePlayerViewModel> ActivePlayers => App.VideoService.ActivePlayers;
+
+        public bool HasActivePlayers => ActivePlayers.Count > 0;
         
         private Random random = new Random();
 
@@ -136,6 +139,9 @@ namespace TrainMeX.ViewModels {
             App.VideoService.MediaErrorOccurred += VideoService_MediaErrorOccurred;
 
             UpdateButtons();
+
+            // Subscribe to ActivePlayers changes to update HasActivePlayers property
+            ActivePlayers.CollectionChanged += (s, e) => OnPropertyChanged(nameof(HasActivePlayers));
             
             // Load session if auto-load is enabled (async to avoid blocking UI)
             try {

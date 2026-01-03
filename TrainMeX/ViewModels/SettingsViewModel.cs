@@ -40,6 +40,10 @@ namespace TrainMeX.ViewModels {
             _panicHotkeyAlt = (settings.PanicHotkeyModifiers & MOD_ALT) != 0;
             _panicHotkeyKey = settings.PanicHotkeyKey ?? "End";
 
+            _panicHotkeyKey = settings.PanicHotkeyKey ?? "End";
+
+
+
             // Load available monitors
             AvailableMonitors = new ObservableCollection<ScreenViewer>();
             RefreshAvailableMonitors();
@@ -161,6 +165,8 @@ namespace TrainMeX.ViewModels {
             settings.PanicHotkeyModifiers = modifiers;
             settings.PanicHotkeyKey = PanicHotkeyKey ?? "End";
             
+
+            
             settings.Save();
 
             RequestClose?.Invoke(this, System.EventArgs.Empty);
@@ -169,6 +175,7 @@ namespace TrainMeX.ViewModels {
         private void Cancel(object obj) {
             RequestClose?.Invoke(this, System.EventArgs.Empty);
         }
-    }
+
+}
 }
 

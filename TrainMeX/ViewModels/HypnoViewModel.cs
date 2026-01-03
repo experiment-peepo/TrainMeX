@@ -55,7 +55,20 @@ namespace TrainMeX.ViewModels {
         public event EventHandler RequestStopBeforeSourceChange;
         public event EventHandler<MediaErrorEventArgs> MediaErrorOccurred;
 
+        public ICommand SkipCommand { get; }
+        public ICommand TogglePlayPauseCommand { get; }
+
         public HypnoViewModel() {
+            SkipCommand = new RelayCommand(_ => PlayNext());
+            TogglePlayPauseCommand = new RelayCommand(_ => TogglePlayPause());
+        }
+
+        public void TogglePlayPause() {
+            if (MediaState == MediaState.Play) {
+                Pause();
+            } else {
+                Play();
+            }
         }
 
         public void SetQueue(IEnumerable<VideoItem> files) {
@@ -314,7 +327,7 @@ namespace TrainMeX.ViewModels {
             
             // Request play now that media is confirmed loaded
             // This ensures Play() is only called after MediaElement has processed the source
-            RequestPlay?.Invoke(this, EventArgs.Empty);
+            Play();
         }
 
         public void OnMediaFailed(Exception ex) {
@@ -355,10 +368,12 @@ namespace TrainMeX.ViewModels {
         }
 
         public void Play() {
+            MediaState = MediaState.Play;
             RequestPlay?.Invoke(this, EventArgs.Empty);
         }
 
         public void Pause() {
+            MediaState = MediaState.Pause;
             RequestPause?.Invoke(this, EventArgs.Empty);
         }
 

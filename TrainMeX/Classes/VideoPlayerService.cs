@@ -14,6 +14,7 @@ namespace TrainMeX.Classes {
     /// </summary>
     public class VideoPlayerService {
         readonly List<HypnoWindow> players = new List<HypnoWindow>();
+        public System.Collections.ObjectModel.ObservableCollection<ActivePlayerViewModel> ActivePlayers { get; } = new System.Collections.ObjectModel.ObservableCollection<ActivePlayerViewModel>();
         private readonly LruCache<string, bool> _fileExistenceCache;
 
         /// <summary>
@@ -63,7 +64,9 @@ namespace TrainMeX.Classes {
                 
                 w.ViewModel.SetQueue(queue); 
                 
+                
                 players.Add(w);
+                ActivePlayers.Add(new ActivePlayerViewModel(sv.ToString(), w.ViewModel));
             }
         }
 
@@ -85,6 +88,9 @@ namespace TrainMeX.Classes {
         /// Stops and disposes all video players
         /// </summary>
         public void StopAll() {
+            // Unregister all screen hotkeys
+            ActivePlayers.Clear();
+
             // Create a copy of the list to avoid modification during iteration
             var playersCopy = players.ToList();
             players.Clear();
@@ -100,6 +106,8 @@ namespace TrainMeX.Classes {
                 }
             }
         }
+
+
 
         /// <summary>
         /// Sets the volume for all video players
@@ -157,7 +165,10 @@ namespace TrainMeX.Classes {
                 
                 w.ViewModel.SetQueue(queue);
 
+
+
                 players.Add(w);
+                ActivePlayers.Add(new ActivePlayerViewModel(sv.ToString(), w.ViewModel));
             }
         }
 

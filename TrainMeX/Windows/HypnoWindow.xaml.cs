@@ -3,8 +3,10 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Windows;
-using System.Windows.Forms;
+using System.Windows.Interop;
+// using System.Windows.Forms; // Removed to avoid ambiguity
 using System.Windows.Media;
+using System.Windows.Controls;
 using TrainMeX.Classes;
 using TrainMeX.ViewModels;
 
@@ -12,10 +14,10 @@ namespace TrainMeX.Windows {
     [SupportedOSPlatform("windows")]
     public partial class HypnoWindow : Window, IDisposable {
         private HypnoViewModel _viewModel;
-        private Screen _targetScreen;
+        private System.Windows.Forms.Screen _targetScreen;
         private bool _disposed = false;
 
-        public HypnoWindow(Screen targetScreen = null) {
+        public HypnoWindow(System.Windows.Forms.Screen targetScreen = null) {
             InitializeComponent();
             _targetScreen = targetScreen;
             
@@ -207,13 +209,13 @@ namespace TrainMeX.Windows {
         private void Window_SourceInitialized(object sender, EventArgs e) {
             if (_targetScreen != null) {
                 // Validate that the target screen still exists
-                var allScreens = Screen.AllScreens;
+                var allScreens = System.Windows.Forms.Screen.AllScreens;
                 bool screenExists = allScreens.Any(s => s.DeviceName == _targetScreen.DeviceName);
                 
                 if (!screenExists) {
                     // Screen was disconnected, fallback to primary screen
                     Logger.Warning($"Target screen {_targetScreen.DeviceName} is no longer available, falling back to primary screen");
-                    _targetScreen = Screen.PrimaryScreen ?? Screen.AllScreens.FirstOrDefault();
+                    _targetScreen = System.Windows.Forms.Screen.PrimaryScreen ?? System.Windows.Forms.Screen.AllScreens.FirstOrDefault();
                     
                     if (_targetScreen == null) {
                         Logger.Error("No screens available for window positioning");
@@ -246,5 +248,6 @@ namespace TrainMeX.Windows {
                 }), System.Windows.Threading.DispatcherPriority.Loaded);
             }
         }
+        
     }
 }

@@ -27,6 +27,38 @@
     <Window.Resources>
         <local:OpacityToIntConverter x:Key="OpacityToIntConverter"/>
         <local:OpacityScaleConverter x:Key="OpacityScaleConverter"/>
+        <x:Array x:Key="KeyList" Type="sys:String">
+            <sys:String>End</sys:String>
+            <sys:String>Esc</sys:String>
+            <sys:String>Space</sys:String>
+            <sys:String>F1</sys:String>
+            <sys:String>F2</sys:String>
+            <sys:String>F3</sys:String>
+            <sys:String>F4</sys:String>
+            <sys:String>F5</sys:String>
+            <sys:String>F6</sys:String>
+            <sys:String>F7</sys:String>
+            <sys:String>F8</sys:String>
+            <sys:String>F9</sys:String>
+            <sys:String>F10</sys:String>
+            <sys:String>F11</sys:String>
+            <sys:String>F12</sys:String>
+            <sys:String>Delete</sys:String>
+            <sys:String>Insert</sys:String>
+            <sys:String>Home</sys:String>
+            <sys:String>PageUp</sys:String>
+            <sys:String>PageDown</sys:String>
+            <sys:String>NumPad0</sys:String>
+            <sys:String>NumPad1</sys:String>
+            <sys:String>NumPad2</sys:String>
+            <sys:String>NumPad3</sys:String>
+            <sys:String>NumPad4</sys:String>
+            <sys:String>NumPad5</sys:String>
+            <sys:String>NumPad6</sys:String>
+            <sys:String>NumPad7</sys:String>
+            <sys:String>NumPad8</sys:String>
+            <sys:String>NumPad9</sys:String>
+        </x:Array>
     </Window.Resources>
     <Border x:Name="MainBorder" 
             Background="{StaticResource BackgroundPrimary}" 
@@ -222,9 +254,9 @@
                 <TextBlock Text="{Binding PanicHotkeyDisplay, StringFormat='Current: {0}'}" 
                           Foreground="{StaticResource TextTertiary}" FontSize="9" Margin="0,5,0,0" FontStyle="Italic"/>
             </StackPanel>
-            
+
             <!-- Separator -->
-            <Border Style="{StaticResource PinkSeparator}" Margin="0,10,0,20"/>
+
             
             <!-- OK/Cancel Buttons -->
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,10">

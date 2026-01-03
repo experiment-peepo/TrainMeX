@@ -17,6 +17,8 @@ namespace TrainMeX.Classes {
         public uint PanicHotkeyModifiers { get; set; } = 0x0002 | 0x0004; // Ctrl+Shift (default)
         public string PanicHotkeyKey { get; set; } = "End"; // Default key
 
+
+
         public static string SettingsFilePath { get; set; } = "settings.json";
 
         public static UserSettings Load() {

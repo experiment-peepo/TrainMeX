@@ -18,6 +18,7 @@ namespace TrainMeX {
     public partial class App : System.Windows.Application {
         public static Classes.VideoPlayerService VideoService => Classes.ServiceContainer.Get<Classes.VideoPlayerService>();
         public static Classes.UserSettings Settings => Classes.ServiceContainer.Get<Classes.UserSettings>();
+        public static Classes.HotkeyService Hotkeys => Classes.ServiceContainer.Get<Classes.HotkeyService>();
 
         protected override void OnStartup(StartupEventArgs e) {
             base.OnStartup(e);
@@ -79,6 +80,7 @@ namespace TrainMeX {
             // Register Services
             Classes.ServiceContainer.Register(Classes.UserSettings.Load());
             Classes.ServiceContainer.Register(new Classes.VideoPlayerService());
+            Classes.ServiceContainer.Register(new Classes.HotkeyService());
         }
     }
 }

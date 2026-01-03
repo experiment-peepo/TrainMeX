@@ -22,29 +22,28 @@ namespace TrainMeX.Windows {
             ApplyAlwaysOnTopSetting();
         }
 
-        private GlobalHotkeyService _hotkeys;
+        private HotkeyService _hotkeys;
 
 
         
         private void InitializeHotkeys() {
             var helper = new System.Windows.Interop.WindowInteropHelper(this);
-            if (_hotkeys != null) {
-                _hotkeys.Dispose();
-            }
-            _hotkeys = new GlobalHotkeyService();
+            // Use global service
+            _hotkeys = App.Hotkeys;
             
             var settings = App.Settings;
-            _hotkeys.Initialize(helper.Handle, settings.PanicHotkeyModifiers, settings.PanicHotkeyKey ?? "End");
-            
-            _hotkeys.OnPanic += (s, args) => {
-                App.VideoService.StopAll();
-            };
+            _hotkeys.Initialize(helper.Handle);
+            _hotkeys.Register("Panic", settings.PanicHotkeyModifiers, settings.PanicHotkeyKey ?? "End", () => {
+                 App.VideoService.StopAll();
+            });
         }
         
         public void ReloadHotkeys() {
             if (_hotkeys != null) {
                 var settings = App.Settings;
-                _hotkeys.Reinitialize(settings.PanicHotkeyModifiers, settings.PanicHotkeyKey ?? "End");
+                _hotkeys.Register("Panic", settings.PanicHotkeyModifiers, settings.PanicHotkeyKey ?? "End", () => {
+                     App.VideoService.StopAll();
+                });
             }
         }
 
