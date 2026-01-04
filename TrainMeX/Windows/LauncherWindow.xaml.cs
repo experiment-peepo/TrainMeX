@@ -13,6 +13,7 @@ using MouseEventArgs = System.Windows.Input.MouseEventArgs;
 using DragEventArgs = System.Windows.DragEventArgs;
 
 namespace TrainMeX.Windows {
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     public partial class LauncherWindow : Window {
         private LauncherViewModel ViewModel => DataContext as LauncherViewModel;
 
@@ -266,6 +267,13 @@ namespace TrainMeX.Windows {
                 Owner = this
             };
             settingsWindow.ShowDialog();
+        }
+
+        private void AboutButton_Click(object sender, RoutedEventArgs e) {
+            var aboutWindow = new AboutWindow {
+                Owner = this
+            };
+            aboutWindow.ShowDialog();
         }
 
         private void MaximizeButton_Click(object sender, RoutedEventArgs e) {

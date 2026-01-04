@@ -38,7 +38,7 @@
             <SolidColorBrush x:Key="ScrollbarThumbHover" Color="#AAFF69B4"/> <!-- Brighter pink thumb -->
             <SolidColorBrush x:Key="SuccessColor" Color="#90EE90"/>
             <SolidColorBrush x:Key="WarningColor" Color="#FFD700"/>
-            <SolidColorBrush x:Key="ErrorColor" Color="#F44336"/> <!-- Red for danger actions -->
+            <SolidColorBrush x:Key="ErrorColor" Color="#880808"/> <!-- Deep red for danger actions -->
 
             <!-- Animations -->
             <Storyboard x:Key="PulsingGlowStoryboard" RepeatBehavior="Forever" AutoReverse="True">
@@ -174,7 +174,7 @@
                 <Setter Property="Background" Value="{StaticResource ErrorColor}"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#E53935"/>
+                        <Setter Property="Background" Value="#A00909"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>

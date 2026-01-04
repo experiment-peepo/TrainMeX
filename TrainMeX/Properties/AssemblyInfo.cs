@@ -14,17 +14,20 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Windows;
 
+[assembly: InternalsVisibleTo("TrainMeX.Tests")]
+
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("TrainMeX")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Damsel")]
-[assembly: AssemblyProduct("TrainMeX")]
-[assembly: AssemblyCopyright("Copyright ©  2021")]
-[assembly: AssemblyTrademark("")]
-[assembly: AssemblyCulture("")]
+// [assembly: AssemblyTitle("TrainMeX")]
+// [assembly: AssemblyDescription("")]
+// [assembly: AssemblyConfiguration("")]
+// [assembly: AssemblyCompany("Damsel")]
+// [assembly: AssemblyProduct("TrainMeX")]
+// [assembly: AssemblyCopyright("Copyright ©  2021")]
+// [assembly: AssemblyTrademark("")]
+// [assembly: AssemblyCulture("")]
+
 
 // Setting ComVisible to false makes the types in this assembly not visible
 // to COM components.  If you need to access a type in this assembly from
@@ -61,5 +64,5 @@ using System.Windows;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.0.0.3")]
-[assembly: AssemblyFileVersion("0.0.0.3")]
+// Version information is now handled in the .csproj file and CI/CD pipeline
+

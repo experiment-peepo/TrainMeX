@@ -4,21 +4,30 @@ using System.Runtime.Versioning;
 using System.Windows.Forms;
 using System.Windows.Input;
 using TrainMeX.Classes;
+using System.IO;
 
 namespace TrainMeX.ViewModels {
     /// <summary>
     /// ViewModel for the Settings window
     /// </summary>
+    [SupportedOSPlatform("windows")]
     public class SettingsViewModel : ObservableObject {
         private double _defaultOpacity;
         private double _defaultVolume;
-        private bool _autoLoadSession;
+
         private bool _launcherAlwaysOnTop;
         private bool _panicHotkeyCtrl;
         private bool _panicHotkeyShift;
         private bool _panicHotkeyAlt;
         private string _panicHotkeyKey;
         private ScreenViewer _selectedDefaultMonitor;
+        private bool _alwaysOpaque;
+
+        private bool _rememberLastPlaylist;
+        private bool _rememberFilePosition;
+
+        // Taboo Settings
+
 
         // Modifier flags
         private const uint MOD_CONTROL = 0x0002;
@@ -31,7 +40,7 @@ namespace TrainMeX.ViewModels {
             var settings = App.Settings;
             _defaultOpacity = settings.DefaultOpacity;
             _defaultVolume = settings.DefaultVolume;
-            _autoLoadSession = settings.AutoLoadSession;
+
             _launcherAlwaysOnTop = settings.LauncherAlwaysOnTop;
             
             // Load panic hotkey settings
@@ -39,8 +48,10 @@ namespace TrainMeX.ViewModels {
             _panicHotkeyShift = (settings.PanicHotkeyModifiers & MOD_SHIFT) != 0;
             _panicHotkeyAlt = (settings.PanicHotkeyModifiers & MOD_ALT) != 0;
             _panicHotkeyKey = settings.PanicHotkeyKey ?? "End";
+            _alwaysOpaque = settings.AlwaysOpaque;
 
-            _panicHotkeyKey = settings.PanicHotkeyKey ?? "End";
+            _rememberLastPlaylist = settings.RememberLastPlaylist;
+            _rememberFilePosition = settings.RememberFilePosition;
 
 
 
@@ -55,12 +66,27 @@ namespace TrainMeX.ViewModels {
 
             OkCommand = new RelayCommand(Ok);
             CancelCommand = new RelayCommand(Cancel);
+            OpenKoFiCommand = new RelayCommand(OpenKoFi);
+        }
+
+        private void OpenKoFi(object obj) {
+            try {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
+                    FileName = "https://ko-fi.com/vexfromdestiny",
+                    UseShellExecute = true
+                });
+            } catch (System.Exception ex) {
+                Logger.Error("Failed to open Ko-Fi link", ex);
+            }
         }
 
         [SupportedOSPlatform("windows")]
         private void RefreshAvailableMonitors() {
             AvailableMonitors.Clear();
             try {
+                // Add "All Screens" option first
+                AvailableMonitors.Add(ScreenViewer.CreateAllScreens());
+                
                 var screens = WindowServices.GetAllScreenViewers();
                 foreach (var screen in screens) {
                     AvailableMonitors.Add(screen);
@@ -87,10 +113,7 @@ namespace TrainMeX.ViewModels {
             set => SetProperty(ref _defaultVolume, value);
         }
 
-        public bool AutoLoadSession {
-            get => _autoLoadSession;
-            set => SetProperty(ref _autoLoadSession, value);
-        }
+
 
         public bool LauncherAlwaysOnTop {
             get => _launcherAlwaysOnTop;
@@ -135,14 +158,34 @@ namespace TrainMeX.ViewModels {
                 if (PanicHotkeyCtrl) parts.Add("Ctrl");
                 if (PanicHotkeyShift) parts.Add("Shift");
                 if (PanicHotkeyAlt) parts.Add("Alt");
-                if (parts.Count == 0) parts.Add("None");
+                
                 parts.Add(PanicHotkeyKey ?? "End");
                 return string.Join("+", parts);
             }
         }
 
+        public bool AlwaysOpaque {
+            get => _alwaysOpaque;
+            set => SetProperty(ref _alwaysOpaque, value);
+        }
+
+
+
+        public bool RememberLastPlaylist {
+            get => _rememberLastPlaylist;
+            set => SetProperty(ref _rememberLastPlaylist, value);
+        }
+
+        public bool RememberFilePosition {
+            get => _rememberFilePosition;
+            set => SetProperty(ref _rememberFilePosition, value);
+        }
+
+
+            
         public ICommand OkCommand { get; }
         public ICommand CancelCommand { get; }
+        public ICommand OpenKoFiCommand { get; }
 
         public event System.EventHandler RequestClose;
 
@@ -151,7 +194,7 @@ namespace TrainMeX.ViewModels {
             var settings = App.Settings;
             settings.DefaultOpacity = DefaultOpacity;
             settings.DefaultVolume = DefaultVolume;
-            settings.AutoLoadSession = AutoLoadSession;
+
             settings.LauncherAlwaysOnTop = LauncherAlwaysOnTop;
             
             // Save default monitor
@@ -164,8 +207,10 @@ namespace TrainMeX.ViewModels {
             if (PanicHotkeyAlt) modifiers |= MOD_ALT;
             settings.PanicHotkeyModifiers = modifiers;
             settings.PanicHotkeyKey = PanicHotkeyKey ?? "End";
-            
+            settings.AlwaysOpaque = AlwaysOpaque;
 
+            settings.RememberLastPlaylist = RememberLastPlaylist;
+            settings.RememberFilePosition = RememberFilePosition;
             
             settings.Save();
 
@@ -176,6 +221,5 @@ namespace TrainMeX.ViewModels {
             RequestClose?.Invoke(this, System.EventArgs.Empty);
         }
 
+    }
 }
-}
-

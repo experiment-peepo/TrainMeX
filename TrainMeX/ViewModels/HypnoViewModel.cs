@@ -1,9 +1,12 @@
 using System;
+using System.Windows;
+using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Controls;
@@ -23,6 +26,14 @@ namespace TrainMeX.ViewModels {
         private int _recursionDepth = 0; // Track recursion depth to prevent stack overflow
         private const int MaxRecursionDepth = 50; // Maximum recursion depth before aborting
         
+        private (TimeSpan position, long timestamp) _lastPositionRecord;
+        public (TimeSpan position, long timestamp) LastPositionRecord {
+            get => _lastPositionRecord;
+            set => SetProperty(ref _lastPositionRecord, value);
+        }
+
+        public VideoItem CurrentItem => _currentItem;
+        
         private Uri _currentSource;
         public Uri CurrentSource {
             get => _currentSource;
@@ -32,15 +43,25 @@ namespace TrainMeX.ViewModels {
         }
 
         private double _opacity;
-        public double Opacity {
-            get => _opacity;
+        public virtual double Opacity {
+            get => (App.Settings != null && App.Settings.AlwaysOpaque) ? 1.0 : _opacity;
             set => SetProperty(ref _opacity, value);
         }
 
+        public void RefreshOpacity() {
+            OnPropertyChanged(nameof(Opacity));
+        }
+
         private double _volume;
-        public double Volume {
+        public virtual double Volume {
             get => _volume;
             set => SetProperty(ref _volume, value);
+        }
+
+        private double _speedRatio = 1.0;
+        public virtual double SpeedRatio {
+            get => _speedRatio;
+            set => SetProperty(ref _speedRatio, value);
         }
 
         private MediaState _mediaState = MediaState.Manual;
@@ -48,12 +69,22 @@ namespace TrainMeX.ViewModels {
             get => _mediaState;
             set => SetProperty(ref _mediaState, value);
         }
+
+        private bool _isReady = false;
+        public bool IsReady {
+            get => _isReady;
+            private set => SetProperty(ref _isReady, value);
+        }
+
+        public bool UseCoordinatedStart { get; set; } = false;
         
         public event EventHandler RequestPlay;
         public event EventHandler RequestPause;
         public event EventHandler RequestStop;
         public event EventHandler RequestStopBeforeSourceChange;
         public event EventHandler<MediaErrorEventArgs> MediaErrorOccurred;
+        public event EventHandler<TimeSpan> RequestSyncPosition;
+        public event EventHandler RequestReady;
 
         public ICommand SkipCommand { get; }
         public ICommand TogglePlayPauseCommand { get; }
@@ -63,7 +94,7 @@ namespace TrainMeX.ViewModels {
             TogglePlayPauseCommand = new RelayCommand(_ => TogglePlayPause());
         }
 
-        public void TogglePlayPause() {
+        public virtual void TogglePlayPause() {
             if (MediaState == MediaState.Play) {
                 Pause();
             } else {
@@ -88,17 +119,15 @@ namespace TrainMeX.ViewModels {
             // Materialize to array for indexed access - this is necessary for PlayNext() logic
             _files = files?.ToArray() ?? Array.Empty<VideoItem>();
             _currentPos = -1;
-            _consecutiveFailures = 0; // Reset failure counter when queue changes
-            _fileFailureCounts.Clear(); // Clear per-file failure counts when queue changes
             
-            // Clear expected source to stop any in-progress loading (must be in lock for thread safety)
-            lock (_loadLock) {
-                _expectedSource = null;
+            Logger.Info($"Queue updated with {_files.Length} videos");
+            foreach (var f in _files) {
+                Logger.Info($"  - {f.FileName} ({(f.IsUrl ? "URL" : "Local")})");
             }
             
-            // Clear current source to stop any in-progress loading
-            // This prevents MediaOpened events from old sources firing after queue change
-            CurrentSource = null;
+            // Clear failure track when starting a new queue
+            _fileFailureCounts.Clear();
+            _consecutiveFailures = 0;
             
             // Start playing the new queue
             PlayNext();
@@ -106,7 +135,7 @@ namespace TrainMeX.ViewModels {
 
         private VideoItem _currentItem;
 
-        public void PlayNext() {
+        public virtual void PlayNext() {
             if (_files == null || _files.Length == 0) return;
 
             // Prevent rapid/concurrent calls to PlayNext() while loading
@@ -138,15 +167,33 @@ namespace TrainMeX.ViewModels {
                 }
                 
                 // Check if current file has failed too many times
-                var currentPath = _files[_currentPos]?.FilePath;
-                if (currentPath != null && _fileFailureCounts.TryGetValue(currentPath, out int failures) && failures >= MaxFailuresPerFile) {
+                var item = _files[_currentPos];
+                var currentPath = item?.FilePath;
+                if (currentPath == null) continue;
+
+                if (_fileFailureCounts.TryGetValue(currentPath, out int failures) && failures >= MaxFailuresPerFile) {
                     continue; // Skip this file, try next
+                }
+
+                // Deeper validation to avoid LoadCurrentVideo recursion
+                bool isValid = true;
+                if (item.IsUrl) {
+                    if (!FileValidator.ValidateVideoUrl(currentPath, out _)) isValid = false;
+                } else {
+                    if (!Path.IsPathRooted(currentPath) || !File.Exists(currentPath)) isValid = false;
+                }
+
+                if (!isValid) {
+                    // Mark as failed and continue
+                    _fileFailureCounts.AddOrUpdate(currentPath, MaxFailuresPerFile, (k, v) => MaxFailuresPerFile);
+                    continue;
                 }
                 
                 break; // Found a valid file
             } while (true);
 
             LoadCurrentVideo();
+            Logger.Info($"Next video: #{_currentPos} - {_currentItem?.FileName ?? "Unknown"}");
         }
 
         private void LoadCurrentVideo() {
@@ -192,20 +239,15 @@ namespace TrainMeX.ViewModels {
                     // For URLs, validate URL format
                     if (!FileValidator.ValidateVideoUrl(path, out string urlValidationError)) {
                         Logger.Warning($"URL validation failed for '{_currentItem.FileName}': {urlValidationError}. Skipping to next video.");
-                        lock (_loadLock) {
-                            _isLoading = false;
-                            _recursionDepth = Math.Max(0, _recursionDepth - 1); // Decrement before recursive call
-                        }
                         PlayNext();
                         return;
                     }
                 } else {
                     // For local files, check if path is rooted
                     if (!Path.IsPathRooted(path)) {
-                        lock (_loadLock) {
-                            _isLoading = false;
-                            _recursionDepth = Math.Max(0, _recursionDepth - 1); // Decrement on exit
-                        }
+                        Logger.Warning($"Non-rooted path detected for '{_currentItem.FileName}': {path}. Skipping to next video.");
+                        // Skip to next video instead of stalling
+                        PlayNext();
                         return;
                     }
                     
@@ -285,6 +327,7 @@ namespace TrainMeX.ViewModels {
         }
 
         public void OnMediaEnded() {
+            Logger.Info($"Media ended: {_currentItem?.FileName ?? "Unknown"}");
             _consecutiveFailures = 0; // Reset failure counter on successful playback
             
             // Clear failure count for this file since it played successfully (thread-safe)
@@ -321,13 +364,22 @@ namespace TrainMeX.ViewModels {
             _consecutiveFailures = 0;
             
             // Clear failure count for this file since it opened successfully (thread-safe)
+            // Clear failure count for this file since it opened successfully (thread-safe)
             if (_currentItem?.FilePath != null) {
                 _fileFailureCounts.TryRemove(_currentItem.FilePath, out _);
             }
             
-            // Request play now that media is confirmed loaded
-            // This ensures Play() is only called after MediaElement has processed the source
-            Play();
+            if (UseCoordinatedStart) {
+                // Coordinated start: Pause, seek to 0, signal Ready, and wait
+                MediaState = MediaState.Pause;
+                SyncPosition(TimeSpan.Zero);
+                IsReady = true;
+                RequestReady?.Invoke(this, EventArgs.Empty);
+            } else {
+                // Request play now that media is confirmed loaded
+                // This ensures Play() is only called after MediaElement has processed the source
+                Play();
+            }
         }
 
         public void OnMediaFailed(Exception ex) {
@@ -339,6 +391,44 @@ namespace TrainMeX.ViewModels {
             
             var fileName = _currentItem?.FileName ?? "Unknown";
             var filePath = _currentItem?.FilePath;
+            
+            // Check for specific codec/media foundation errors
+            bool isCodecError = false;
+            bool isFileNotFoundError = false;
+            bool isUrlOpenError = false;
+            string specificAdvice = "";
+
+            if (ex is COMException comEx) {
+                // 0x8898050C = MILAVERR_UNEXPECTEDWMPFAILURE (Common with resource exhaustion or codec issues)
+                // 0xC00D5212 = MF_E_TOPO_CODEC_NOT_FOUND (Explicit missing codec)
+                // 0xC00D11B1 = NS_E_WMP_FILE_OPEN_FAILED (File/URL cannot be opened)
+                uint errorCode = (uint)comEx.ErrorCode;
+                if (errorCode == 0x8898050C) {
+                    isCodecError = true;
+                    specificAdvice = " This error (0x8898050C) typically indicates: 1) GPU/VRAM exhaustion when playing multiple videos, 2) Missing codecs, or 3) Corrupted video file. Try reducing the number of active screens or check if the file plays in other media players.";
+                } else if (errorCode == 0xC00D5212) {
+                    isCodecError = true;
+                    specificAdvice = " Missing codec for this video format. Install required codecs or convert the video to a supported format.";
+                } else if (errorCode == 0xC00D11B1) {
+                    // File open failed - different handling for URLs vs local files
+                    if (_currentItem?.IsUrl == true) {
+                        isUrlOpenError = true;
+                        specificAdvice = " URL cannot be opened. This typically means: 1) The URL has expired or is no longer valid, 2) Network connectivity issues, 3) The server is unavailable, or 4) DRM-protected content. Try refreshing the URL or checking your network connection.";
+                    } else {
+                        isFileNotFoundError = true;
+                        specificAdvice = " File cannot be opened. The file may be locked by another application, corrupted, or you may lack read permissions.";
+                    }
+                }
+            } else if (ex is System.IO.FileNotFoundException) {
+                isFileNotFoundError = true;
+                // Check if file actually exists - this could be a URI encoding issue
+                if (filePath != null && System.IO.File.Exists(filePath)) {
+                    specificAdvice = " File exists on disk but MediaElement cannot load it. This may be due to special characters in the filename or path. Try renaming the file to remove special characters like '&', '#', etc.";
+                } else {
+                    specificAdvice = " File does not exist or has been moved/deleted.";
+                }
+            }
+            
             var errorMessage = $"Failed to play video: {fileName}";
             
             Logger.Error(errorMessage, ex);
@@ -348,12 +438,20 @@ namespace TrainMeX.ViewModels {
             
             // Track failures per file (thread-safe with ConcurrentDictionary)
             if (filePath != null) {
-                int failureCount = _fileFailureCounts.AddOrUpdate(filePath, 1, (key, oldValue) => oldValue + 1);
-                Logger.Warning($"File '{fileName}' has failed {failureCount} time(s). Will skip after {MaxFailuresPerFile} failures.");
+                // If it's a known unrecoverable error, force max failures to skip immediately
+                // Codec errors, file not found errors, and URL open errors should skip immediately
+                int increment = (isCodecError || isFileNotFoundError || isUrlOpenError) ? MaxFailuresPerFile : 1;
+                int failureCount = _fileFailureCounts.AddOrUpdate(filePath, increment, (key, oldValue) => oldValue + increment);
+                
+                if (isCodecError || isFileNotFoundError || isUrlOpenError) {
+                    Logger.Warning($"Unrecoverable error for '{fileName}'. Marking as failed immediately to avoid retries.");
+                } else {
+                    Logger.Warning($"File '{fileName}' has failed {failureCount} time(s). Will skip after {MaxFailuresPerFile} failures.");
+                }
             }
             
             // Notify listeners (e.g., UI) about the error
-            MediaErrorOccurred?.Invoke(this, new MediaErrorEventArgs($"{errorMessage}. Error: {ex?.Message ?? "Unknown error"}"));
+            MediaErrorOccurred?.Invoke(this, new MediaErrorEventArgs($"{errorMessage}.{specificAdvice} Error: {ex?.Message ?? "Unknown error"}"));
             
             // Stop retrying if we've exceeded the failure threshold
             // This prevents infinite retry loops when all videos fail
@@ -364,21 +462,34 @@ namespace TrainMeX.ViewModels {
             }
             
             // Skip to next video to avoid getting stuck
-            PlayNext();
+            // Add a delay to allow GPU resources to free up (especially for 0x8898050C errors)
+            int delayMs = isCodecError ? 500 : 300;
+            _ = Task.Delay(delayMs).ContinueWith(_ => {
+                Application.Current?.Dispatcher.InvokeAsync(() => PlayNext());
+            });
         }
 
-        public void Play() {
+        public virtual void Play() {
             MediaState = MediaState.Play;
+            IsReady = false; // No longer just "Ready", actually playing
             RequestPlay?.Invoke(this, EventArgs.Empty);
         }
 
-        public void Pause() {
+        public virtual void ForcePlay() {
+            Play();
+        }
+
+        public virtual void Pause() {
             MediaState = MediaState.Pause;
             RequestPause?.Invoke(this, EventArgs.Empty);
         }
 
         public void Stop() {
             RequestStop?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void SyncPosition(TimeSpan position) {
+            RequestSyncPosition?.Invoke(this, position);
         }
     }
 

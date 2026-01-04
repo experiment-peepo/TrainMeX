@@ -44,6 +44,11 @@ namespace TrainMeX.Classes {
                 var uri = new Uri(normalizedUrl);
                 var host = uri.Host.ToLowerInvariant();
                 
+                // If it's already a direct video URL, return it immediately
+                if (Constants.VideoExtensions.Any(ext => uri.AbsolutePath.EndsWith(ext, StringComparison.OrdinalIgnoreCase))) {
+                    return normalizedUrl;
+                }
+                
                 string videoUrl = null;
                 
                 if (host.Contains("hypnotube.com")) {
@@ -177,8 +182,8 @@ namespace TrainMeX.Classes {
 
                 // Method 3: Look for video URLs in JavaScript variables
                 var jsVideoPatterns = new[] {
-                    @"(?:src|url|source|videoUrl|file)\s*[:=]\s*[""']([^""']*\.(?:mp4|webm|mkv|avi|mov|wmv|m4v)[^""']*)[""']",
-                    @"[""']([^""']*\.(?:mp4|webm|mkv|avi|mov|wmv|m4v)[^""']*)[""']"
+                    @"(?:src|url|source|videoUrl|file)\s*[:=]\s*[""']([^""']*\.(?:mp4|webm|mkv|avi|mov|wmv|m4v|mpg|mpeg|ts|m2ts)[^""']*)[""']",
+                    @"[""']([^""']*\.(?:mp4|webm|mkv|avi|mov|wmv|m4v|mpg|mpeg|ts|m2ts)[^""']*)[""']"
                 };
 
                 foreach (var pattern in jsVideoPatterns) {
@@ -205,7 +210,7 @@ namespace TrainMeX.Classes {
 
             try {
                 // Look for JSON objects that might contain video URLs
-                var jsonPattern = @"\{[^{}]*""(?:src|url|source|file|videoUrl)""\s*:\s*""([^""]+\.(?:mp4|webm|mkv|avi|mov|wmv|m4v)[^""]*)""[^{}]*\}";
+                var jsonPattern = @"\{[^{}]*""(?:src|url|source|file|videoUrl)""\s*:\s*""([^""]+\.(?:mp4|webm|mkv|avi|mov|wmv|m4v|mpg|mpeg|ts|m2ts)[^""]*)""[^{}]*\}";
                 var matches = Regex.Matches(html, jsonPattern, RegexOptions.IgnoreCase);
                 
                 foreach (Match match in matches) {

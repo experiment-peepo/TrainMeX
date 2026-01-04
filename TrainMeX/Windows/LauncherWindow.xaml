@@ -117,12 +117,14 @@
                     <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="50"/>
                     <ColumnDefinition Width="50"/>
+                    <ColumnDefinition Width="50"/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
                 <Button Style="{StaticResource ControlButton}" Command="{Binding ExitCommand}" ToolTip="Exit application">x</Button>
                 <Button x:Name="MaximizeButton" Style="{StaticResource ControlButton}" Click="MaximizeButton_Click" Grid.Column="1" ToolTip="Maximize/Restore window">□</Button>
                 <Button Style="{StaticResource ControlButton}" Command="{Binding MinimizeCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Grid.Column="2" ToolTip="Minimize window">-</Button>
                 <Button Style="{StaticResource ControlButton}" Click="SettingsButton_Click" Grid.Column="3" FontSize="14" ToolTip="Open settings">⚙</Button>
+                <Button Style="{StaticResource ControlButton}" Click="AboutButton_Click" Grid.Column="4" FontSize="14" ToolTip="About TrainMeX" FontWeight="Bold">i</Button>
             </Grid>
         </Border>
         
@@ -409,13 +411,7 @@
                 </EventTrigger>
             </Button.Triggers>
         </Button>
-        <Button x:Name="PauseButton" 
-                Command="{Binding PauseCommand}" 
-                IsEnabled="{Binding IsPauseEnabled}" 
-                Content="{Binding PauseButtonText}" 
-                Style="{StaticResource SecondaryButtonStyle}" 
-                ToolTip="Pause or resume video playback"
-                Grid.Row="9" />
+
         <!-- Active Playback Controls -->
         <StackPanel Grid.Row="10" Margin="0,5,0,10" Visibility="{Binding HasActivePlayers, Converter={StaticResource BooleanToVisibilityConverter}}">
             <Label Style="{StaticResource LowerTitle}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5">Active Sessions</Label>

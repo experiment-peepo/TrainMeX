@@ -22,15 +22,27 @@ namespace TrainMeX.Classes {
     public class ScreenViewer {
         public Screen Screen;
         public string DeviceName;
+        public bool IsAllScreens { get; private set; }
+
         public ScreenViewer(Screen screen) {
             Screen = screen;
-            DeviceName = screen.DeviceName;
+            DeviceName = screen?.DeviceName;
+            IsAllScreens = false;
+        }
+
+        public static ScreenViewer CreateAllScreens() {
+            return new ScreenViewer(null) {
+                DeviceName = "ALL_SCREENS",
+                IsAllScreens = true
+            };
         }
 
         public override bool Equals(object obj) => obj is ScreenViewer other && other.DeviceName == this.DeviceName;
         public override int GetHashCode() => DeviceName?.GetHashCode() ?? 0;
 
         public override string ToString() {
+            if (IsAllScreens) return "[All Monitors]";
+
             // Extract screen number from DeviceName (e.g., "\\\\.\\DISPLAY1" -> "Screen 1")
             int screenNumber = 1;
             if (!string.IsNullOrEmpty(DeviceName)) {
