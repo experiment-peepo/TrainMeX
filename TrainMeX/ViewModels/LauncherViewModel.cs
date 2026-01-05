@@ -138,6 +138,9 @@ namespace TrainMeX.ViewModels {
             // Subscribe to ActivePlayers changes to update HasActivePlayers property
             ActivePlayers.CollectionChanged += (s, e) => OnPropertyChanged(nameof(HasActivePlayers));
             
+            // Cleanup old playback positions on startup (older than 30 days)
+            PlaybackPositionTracker.Instance.CleanupOldPositions();
+            
             // Load session if auto-load is enabled (async to avoid blocking UI)
             try {
                 if (App.Settings != null && App.Settings.RememberLastPlaylist) {
@@ -425,9 +428,14 @@ namespace TrainMeX.ViewModels {
         }
 
         private void Dehypnotize(object obj) {
+            Logger.Info("[Launcher] Stopping all playback (Dehypnotize)...");
             IsDehypnotizeEnabled = false;
 
             App.VideoService.StopAll();
+            
+            // Ensure positions are saved to disk after windows are closed
+            PlaybackPositionTracker.Instance.SaveSync();
+            Logger.Info("[Launcher] Playback stopped and positions saved.");
         }
 
 
@@ -789,7 +797,16 @@ namespace TrainMeX.ViewModels {
 
         private void Exit(object obj) {
             if (MessageBox.Show("Exit program? All hypnosis will be terminated :(", "Exit program", MessageBoxButton.YesNo) == MessageBoxResult.Yes) {
+                Logger.Info("[Launcher] Application exiting...");
+                
+                // Stop all players first to capture final positions
+                App.VideoService.StopAll();
+                
+                // Save session and playback positions
                 SaveSession(runInBackground: false);
+                PlaybackPositionTracker.Instance.SaveSync();
+                
+                Logger.Info("[Launcher] Session and positions saved. Shutting down.");
                 Application.Current.Shutdown();
             }
         }

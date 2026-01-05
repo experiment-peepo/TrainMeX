@@ -21,7 +21,7 @@ namespace TrainMeX.Classes {
         // History Settings
 
         public bool RememberLastPlaylist { get; set; } = true;
-        public bool RememberFilePosition { get; set; } = false;
+        public bool RememberFilePosition { get; set; } = true;
 
         // Taboo Settings
 

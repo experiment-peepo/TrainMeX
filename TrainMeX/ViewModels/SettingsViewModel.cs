@@ -67,6 +67,13 @@ namespace TrainMeX.ViewModels {
             OkCommand = new RelayCommand(Ok);
             CancelCommand = new RelayCommand(Cancel);
             OpenKoFiCommand = new RelayCommand(OpenKoFi);
+            ResetPositionsCommand = new RelayCommand(ResetPositions);
+        }
+
+        private void ResetPositions(object obj) {
+            if (System.Windows.MessageBox.Show("Are you sure you want to clear all saved video positions? This cannot be undone.", "Reset Playback History", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning) == System.Windows.MessageBoxResult.Yes) {
+                PlaybackPositionTracker.Instance.ClearAllPositions();
+            }
         }
 
         private void OpenKoFi(object obj) {
@@ -186,6 +193,7 @@ namespace TrainMeX.ViewModels {
         public ICommand OkCommand { get; }
         public ICommand CancelCommand { get; }
         public ICommand OpenKoFiCommand { get; }
+        public ICommand ResetPositionsCommand { get; }
 
         public event System.EventHandler RequestClose;
 

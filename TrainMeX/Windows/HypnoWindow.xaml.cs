@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
@@ -17,17 +18,29 @@ namespace TrainMeX.Windows {
         private HypnoViewModel _viewModel;
         private System.Windows.Forms.Screen _targetScreen;
         private bool _disposed = false;
+        private bool _isLoadingPosition = false;
+        private bool _isFirstPlay = true;
+        private TimeSpan? _pendingResumePosition = null;
+        private DateTime _lastPositionSaveTime = DateTime.MinValue;
         private System.Windows.Threading.DispatcherTimer _syncTimer;
 
-        public HypnoWindow(System.Windows.Forms.Screen targetScreen = null) {
+        public HypnoWindow(System.Windows.Forms.Screen screen = null) {
             InitializeComponent();
-            _targetScreen = targetScreen;
-            
-            // GPU acceleration is enabled at application level in App.xaml.cs
-            // WPF MediaElement uses Windows Media Foundation which automatically uses hardware acceleration
-            
+            _targetScreen = screen;
             _viewModel = new HypnoViewModel();
-            DataContext = _viewModel;
+            this.DataContext = _viewModel;
+            
+            if (screen != null) {
+                Logger.Info($"[HypnoWindow] Created for screen {screen.DeviceName}");
+                
+                // Set window position and size to cover the target screen
+                this.Left = screen.Bounds.Left;
+                this.Top = screen.Bounds.Top;
+                this.Width = screen.Bounds.Width;
+                this.Height = screen.Bounds.Height;
+            } else {
+                Logger.Info("[HypnoWindow] Created with default screen");
+            }
             // ... (keep event subscriptions)
             _viewModel.RequestPlay += ViewModel_RequestPlay;
             _viewModel.RequestPause += ViewModel_RequestPause;
@@ -59,13 +72,19 @@ namespace TrainMeX.Windows {
         private void SyncTimer_Tick(object sender, EventArgs e) {
             if (_disposed || FirstVideo == null || _viewModel == null) return;
             try {
-                // Only report position if media is loaded and playing
+                // Always update the LastPositionRecord for synchronization logic (every 50ms)
                 if (FirstVideo.Source != null && FirstVideo.NaturalDuration.HasTimeSpan) {
                     _viewModel.LastPositionRecord = (FirstVideo.Position, Stopwatch.GetTimestamp());
                     
-                    // Update playback position tracker
-                    string path = FirstVideo.Source.IsAbsoluteUri ? FirstVideo.Source.LocalPath : FirstVideo.Source.OriginalString;
-                    PlaybackPositionTracker.Instance.UpdatePosition(path, FirstVideo.Position);
+                    // But only update the PERSISTENT tracker every 2 seconds to avoid race conditions and overhead
+                    if (DateTime.Now - _lastPositionSaveTime > TimeSpan.FromSeconds(2)) {
+                        // Skip persistence if we are still in the protected 'loading/seeking' window
+                        if (!_isLoadingPosition) {
+                            string path = FirstVideo.Source.IsAbsoluteUri ? FirstVideo.Source.LocalPath : FirstVideo.Source.OriginalString;
+                            PlaybackPositionTracker.Instance.UpdatePosition(path, FirstVideo.Position);
+                            _lastPositionSaveTime = DateTime.Now;
+                        }
+                    }
                 }
             } catch {
                 // Ignore errors during position extraction
@@ -94,6 +113,26 @@ namespace TrainMeX.Windows {
                 // Double-check disposal state after the initial check to handle race conditions
                 if (!_disposed && FirstVideo != null && FirstVideo.Source != null) {
                     FirstVideo.Play();
+
+                    // DOUBLE-SEEK STRATEGY: 
+                    // Some decoders (especially with 4K files) reset Position to 0 on the first Play call.
+                    // By re-applying the seek right after Play(), we ensure it "sticks" to the active stream.
+                    if (_isFirstPlay && _pendingResumePosition.HasValue) {
+                        Logger.Info($"[HypnoWindow] Applying pending resume position on first Play: {_pendingResumePosition.Value}");
+                        _isLoadingPosition = true;
+                        FirstVideo.Position = _pendingResumePosition.Value;
+                        _isFirstPlay = false;
+
+                        // Keep the _isLoadingPosition guard active for 1 second to let the media pipeline stabilize
+                        var guardTimer = new System.Windows.Threading.DispatcherTimer { 
+                           Interval = TimeSpan.FromSeconds(1) 
+                        };
+                        guardTimer.Tick += (s, ev) => { 
+                           _isLoadingPosition = false; 
+                           guardTimer.Stop(); 
+                        };
+                        guardTimer.Start();
+                    }
                 }
             } catch (InvalidOperationException ex) {
                 // MediaElement may be in an invalid state (e.g., disposed)
@@ -181,12 +220,33 @@ namespace TrainMeX.Windows {
                     
                     // Dispose MediaElement
                     if (FirstVideo != null) {
+                        try {
+                            // LAST CHANCE: Capture position before stopping
+                            // Capture final position before stopping MediaElement
+                            // We use _isLoadingPosition guard to ensure we don't save 0 while seeking
+                            if (!_isLoadingPosition && FirstVideo != null && FirstVideo.Source != null && FirstVideo.Position.TotalSeconds > 5) {
+                                string path = FirstVideo.Source.IsAbsoluteUri ? FirstVideo.Source.LocalPath : FirstVideo.Source.OriginalString;
+                                PlaybackPositionTracker.Instance.UpdatePosition(path, FirstVideo.Position);
+                                Logger.Info($"[HypnoWindow] Captured final playback position for {System.IO.Path.GetFileName(path)}: {FirstVideo.Position}");
+                            } else if (_isLoadingPosition) {
+                                Logger.Info("[HypnoWindow] Skipping final position capture: loading/seeking in progress.");
+                            } else if (FirstVideo != null && FirstVideo.Position.TotalSeconds <= 5) {
+                                Logger.Info($"[HypnoWindow] Skipping capture: position too early ({FirstVideo.Position.TotalSeconds:F1}s)");
+                            } else {
+                                Logger.Info("[HypnoWindow] Skipping capture: FirstVideo or Source is null.");
+                            }
+                        } catch (Exception ex) {
+                            Logger.Warning($"[HypnoWindow] Failed to capture final position: {ex.Message}");
+                        }
+
                         FirstVideo.Stop();
                         FirstVideo.Close();
                         FirstVideo = null;
+                        Logger.Info("[HypnoWindow] MediaElement stopped and closed");
                     }
                 }
                 _disposed = true;
+                Logger.Info("[HypnoWindow] Disposed");
             }
         }
 
@@ -240,31 +300,49 @@ namespace TrainMeX.Windows {
         private void FirstVideo_MediaOpened(object sender, RoutedEventArgs e) {
             // Check disposal state and dependencies
             if (_disposed || _viewModel == null || FirstVideo == null) return;
+
+            // Reset flags for the new media source
+            _isFirstPlay = true;
+            _pendingResumePosition = null;
+            _lastPositionSaveTime = DateTime.Now; // Delay first persistence save
             
             try {
                 // Double-check disposal state to handle race conditions
                 if (!_disposed && _viewModel != null && FirstVideo != null) {
-                    // Notify view model that media opened successfully
-                    // This will trigger RequestPlay event which will call Play()
-                    _viewModel.OnMediaOpened();
+                    string path = FirstVideo.Source.IsAbsoluteUri ? FirstVideo.Source.LocalPath : FirstVideo.Source.OriginalString;
                     
-                    // Check for saved position
-                    if (FirstVideo.Source != null) {
+                    // We wrap the restoration and playback in a BeginInvoke with Loaded priority.
+                    // This ensures the MediaElement's internal pipeline is fully stable 
+                    // before we attempt to seek or play, which is critical for 4K files.
+                    Dispatcher.BeginInvoke(new Action(() => {
+                        if (_disposed || FirstVideo == null || FirstVideo.Source == null) return;
+                        
+                        Logger.Info($"[HypnoWindow] Processing MediaOpened for: {System.IO.Path.GetFileName(path)}");
+
+                        // 1. Check for saved position (Seek attempt 1)
                         try {
-                            // Using LocalPath if absolute URI, or OriginalString
-                            string path = FirstVideo.Source.IsAbsoluteUri ? FirstVideo.Source.LocalPath : FirstVideo.Source.OriginalString;
                             var savedPos = PlaybackPositionTracker.Instance.GetPosition(path);
-                            if (savedPos.HasValue) {
-                                Logger.Info($"Resuming video from saved position: {savedPos.Value}");
-                                FirstVideo.Position = savedPos.Value;
+                            if (savedPos.HasValue && savedPos.Value.Ticks > 0) {
+                                _pendingResumePosition = savedPos.Value;
+
+                                if (FirstVideo.NaturalDuration.HasTimeSpan) {
+                                    TimeSpan duration = FirstVideo.NaturalDuration.TimeSpan;
+                                    if (duration.Ticks > 0 && savedPos.Value < duration) {
+                                        Logger.Info($"[HypnoWindow] First seek attempt (Open): {savedPos.Value}");
+                                        _isLoadingPosition = true;
+                                        FirstVideo.Position = savedPos.Value;
+                                        _isLoadingPosition = false;
+                                    }
+                                }
                             }
                         } catch (Exception ex) {
-                            Logger.Warning($"Failed to restore playback position: {ex.Message}");
+                            Logger.Warning($"[HypnoWindow] Failed initial resume attempt: {ex.Message}");
                         }
-                    }
 
-                    // Note: Play() is now called via RequestPlay event from OnMediaOpened()
-                    // This ensures proper sequencing and state management
+                        // 2. Notify view model that media opened successfully
+                        // This will trigger RequestPlay which will call Play() and perform Seek attempt 2
+                        _viewModel.OnMediaOpened();
+                    }), System.Windows.Threading.DispatcherPriority.Loaded);
                 }
             } catch (Exception ex) {
                 Logger.Error("Error in FirstVideo_MediaOpened", ex);

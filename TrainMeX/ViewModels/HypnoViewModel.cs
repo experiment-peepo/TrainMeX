@@ -370,12 +370,13 @@ namespace TrainMeX.ViewModels {
             }
             
             if (UseCoordinatedStart) {
-                // Coordinated start: Pause, seek to 0, signal Ready, and wait
-                MediaState = MediaState.Pause;
-                SyncPosition(TimeSpan.Zero);
-                IsReady = true;
-                RequestReady?.Invoke(this, EventArgs.Empty);
-            } else {
+        // Coordinated start: Pause, signal Ready, and wait.
+        // We avoid an explicit SyncPosition(Zero) here to allow the resume logic 
+        // in HypnoWindow to set the correct starting position if available.
+        MediaState = MediaState.Pause;
+        IsReady = true;
+        RequestReady?.Invoke(this, EventArgs.Empty);
+    } else {
                 // Request play now that media is confirmed loaded
                 // This ensures Play() is only called after MediaElement has processed the source
                 Play();

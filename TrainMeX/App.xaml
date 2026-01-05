@@ -195,6 +195,80 @@
                 </Style.Triggers>
             </Style>
 
+            <!-- Modern Premium CheckBox Style -->
+            <Style x:Key="ModernCheckBoxStyle" TargetType="CheckBox">
+                <Setter Property="FontFamily" Value="Segoe UI"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="Background" Value="#2D2D30"/>
+                <Setter Property="Padding" Value="8,5"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="CheckBox">
+                            <Grid Background="Transparent">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!-- Checkbox Square -->
+                                <Border x:Name="CheckBoxBorder"
+                                        Grid.Column="0"
+                                        Width="16" 
+                                        Height="16"
+                                        BorderBrush="#5A5A5A"
+                                        BorderThickness="1"
+                                        Background="#3F3F46"
+                                        CornerRadius="2"
+                                        Margin="0,0,8,0"
+                                        VerticalAlignment="Center">
+                                    <Path x:Name="CheckMark"
+                                          Data="M 2,5 L 5,8 L 12,1"
+                                          Stroke="#FFFFFF"
+                                          StrokeThickness="2"
+                                          Visibility="Collapsed"
+                                          Stretch="Uniform"
+                                          Margin="2"/>
+                                </Border>
+
+                                <!-- Label Text -->
+                                <ContentPresenter Grid.Column="1"
+                                                 VerticalAlignment="Center"
+                                                 Content="{TemplateBinding Content}"/>
+                            </Grid>
+
+                            <ControlTemplate.Triggers>
+                                <!-- Checked State -->
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="CheckMark" 
+                                            Property="Visibility" 
+                                            Value="Visible"/>
+                                    <Setter TargetName="CheckBoxBorder" 
+                                            Property="Background" 
+                                            Value="{StaticResource AccentPrimary}"/>
+                                    <Setter TargetName="CheckBoxBorder" 
+                                            Property="BorderBrush" 
+                                            Value="{StaticResource AccentPrimary}"/>
+                                </Trigger>
+
+                                <!-- Hover State -->
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="CheckBoxBorder" 
+                                            Property="BorderBrush" 
+                                            Value="{StaticResource AccentPrimary}"/>
+                                </Trigger>
+
+                                <!-- Disabled State -->
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.5"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
             <!-- Global TextBox Style -->
             <Style x:Key="PinkTextBoxStyle" TargetType="TextBox">
                 <Setter Property="Background" Value="{StaticResource BackgroundSecondary}"/>

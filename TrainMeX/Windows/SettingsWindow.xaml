@@ -170,7 +170,7 @@
                             </StackPanel>
                             <CheckBox Grid.Row="2" Grid.Column="1" 
                                       IsChecked="{Binding AlwaysOpaque}"
-                                      Style="{StaticResource SettingsCheckBoxStyle}"
+                                      Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"/>
                         </Grid>
                     </GroupBox>
@@ -190,7 +190,7 @@
                             </StackPanel>
                             <CheckBox Grid.Row="0" Grid.Column="1" 
                                       IsChecked="{Binding LauncherAlwaysOnTop}"
-                                      Style="{StaticResource SettingsCheckBoxStyle}"
+                                      Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"/>
                         </Grid>
                     </GroupBox>
@@ -213,9 +213,9 @@
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Orientation="Horizontal" Grid.Column="0" VerticalAlignment="Center">
-                                    <CheckBox Content="Ctrl" IsChecked="{Binding PanicHotkeyCtrl}" Style="{StaticResource SettingsCheckBoxStyle}" FontSize="12" Margin="0,0,10,0" Foreground="{StaticResource TextPrimary}"/>
-                                    <CheckBox Content="Shift" IsChecked="{Binding PanicHotkeyShift}" Style="{StaticResource SettingsCheckBoxStyle}" FontSize="12" Margin="0,0,10,0" Foreground="{StaticResource TextPrimary}"/>
-                                    <CheckBox Content="Alt" IsChecked="{Binding PanicHotkeyAlt}" Style="{StaticResource SettingsCheckBoxStyle}" FontSize="12" Margin="0,0,10,0" Foreground="{StaticResource TextPrimary}"/>
+                                    <CheckBox Content="Ctrl" IsChecked="{Binding PanicHotkeyCtrl}" Style="{StaticResource ModernCheckBoxStyle}" FontSize="12" Margin="0,0,10,0" Foreground="{StaticResource TextPrimary}"/>
+                                    <CheckBox Content="Shift" IsChecked="{Binding PanicHotkeyShift}" Style="{StaticResource ModernCheckBoxStyle}" FontSize="12" Margin="0,0,10,0" Foreground="{StaticResource TextPrimary}"/>
+                                    <CheckBox Content="Alt" IsChecked="{Binding PanicHotkeyAlt}" Style="{StaticResource ModernCheckBoxStyle}" FontSize="12" Margin="0,0,10,0" Foreground="{StaticResource TextPrimary}"/>
                                 </StackPanel>
                                 <TextBlock Text="+" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="{StaticResource TextSecondary}" Margin="5,0"/>
                                 <ComboBox Grid.Column="2" Width="100" ItemsSource="{StaticResource KeyList}" SelectedItem="{Binding PanicHotkeyKey}" Style="{StaticResource PinkComboBoxStyle}"/>
@@ -234,6 +234,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
 
 
@@ -245,7 +246,7 @@
                             </StackPanel>
                             <CheckBox Grid.Row="1" Grid.Column="1" 
                                       IsChecked="{Binding RememberLastPlaylist}"
-                                      Style="{StaticResource SettingsCheckBoxStyle}"
+                                      Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"/>
 
                             <!-- Remember File Position -->
@@ -255,8 +256,16 @@
                             </StackPanel>
                             <CheckBox Grid.Row="2" Grid.Column="1" 
                                       IsChecked="{Binding RememberFilePosition}"
-                                      Style="{StaticResource SettingsCheckBoxStyle}"
+                                      Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"/>
+
+                            <!-- Reset Positions Button -->
+                            <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                    Command="{Binding ResetPositionsCommand}"
+                                    Content="Reset All Saved Positions"
+                                    Style="{StaticResource DangerButtonStyle}"
+                                    Height="36" Padding="10,5" Margin="0,15,0,0"
+                                    HorizontalAlignment="Stretch"/>
                         </Grid>
                     </GroupBox>
                 </StackPanel>

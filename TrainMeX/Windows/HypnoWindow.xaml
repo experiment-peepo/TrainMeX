@@ -37,7 +37,7 @@
             MediaFailed="FirstVideo_MediaFailed"
             MediaOpened="FirstVideo_MediaOpened"
             Volume="{Binding Volume}"
-            ScrubbingEnabled="False"
+            ScrubbingEnabled="True"
             RenderOptions.BitmapScalingMode="HighQuality">
             <MediaElement.Effect>
                 <!-- Placeholder for TabooCorruptionEffect, assigned in code-behind -->
