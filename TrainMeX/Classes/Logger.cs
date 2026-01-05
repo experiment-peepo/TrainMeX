@@ -14,7 +14,17 @@ namespace TrainMeX.Classes {
         internal const int MaxConsecutiveFailures = 10; // Stop trying file logging after this many failures
 
         static Logger() {
-            _logFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TrainMeX.log");
+            try {
+                var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                var logDir = Path.Combine(appData, "TrainMeX");
+                if (!Directory.Exists(logDir)) {
+                    Directory.CreateDirectory(logDir);
+                }
+                _logFilePath = Path.Combine(logDir, "TrainMeX.log");
+            } catch (Exception) {
+                // Fallback to temp if AppData fails
+                _logFilePath = Path.Combine(Path.GetTempPath(), "TrainMeX_Fallback.log");
+            }
         }
 
         /// <summary>

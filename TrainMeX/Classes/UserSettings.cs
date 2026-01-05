@@ -28,15 +28,41 @@ namespace TrainMeX.Classes {
 
 
 
-        public static string SettingsFilePath { get; set; } = "settings.json";
+        private static string _settingsPath;
+        public static string SettingsFilePath {
+            get {
+                if (_settingsPath == null) {
+                    var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                    var settingsDir = Path.Combine(appData, "TrainMeX");
+                    if (!Directory.Exists(settingsDir)) {
+                        Directory.CreateDirectory(settingsDir);
+                    }
+                    _settingsPath = Path.Combine(settingsDir, "settings.json");
+                }
+                return _settingsPath;
+            }
+        }
 
         public static UserSettings Load() {
             try {
+                // Migration Check: If local settings exist but AppData doesn't, migrate them
+                var localPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.json");
+                if (File.Exists(localPath) && !File.Exists(SettingsFilePath)) {
+                    try {
+                        Logger.Info("Migrating legacy settings to AppData...");
+                        File.Copy(localPath, SettingsFilePath);
+                        // Optional: File.Delete(localPath); // Keep for safety for now
+                    } catch (Exception ex) {
+                        Logger.Warning("Failed to migrate settings", ex);
+                    }
+                }
+
                 if (File.Exists(SettingsFilePath)) {
                     string json = File.ReadAllText(SettingsFilePath);
                     var settings = JsonSerializer.Deserialize<UserSettings>(json) ?? new UserSettings();
                     // Validate and clamp loaded values
                     settings.ValidateAndClampValues();
+                    Logger.Info($"Loaded settings from {SettingsFilePath}");
                     return settings;
                 }
             } catch (Exception ex) {
