@@ -36,8 +36,19 @@ jobs:
           $runNumber = "${{ github.run_number }}"
           $version = "$baseVersion.$runNumber"
         }
+        
+        # Clean numeric version for AssemblyVersion/FileVersion
+        $numericVersion = ($version -split '-')[0]
+        if ($numericVersion -notmatch '^\d+\.\d+\.\d+(\.\d+)?$') {
+           $parts = $numericVersion.Split('.')
+           while ($parts.Count -lt 3) { $parts += "0" }
+           $numericVersion = ($parts[0..2] -join ".")
+        }
+
         echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "numeric_version=$numericVersion" >> $env:GITHUB_OUTPUT
         echo "Computed Version: $version"
+        echo "Numeric Version: $numericVersion"
       shell: pwsh
       
     - name: Build and Publish
@@ -49,8 +60,9 @@ jobs:
           -p:PublishSingleFile=true `
           -p:IncludeNativeLibrariesForSelfExtract=true `
           -p:Version=${{ steps.git_version.outputs.version }} `
-          -p:AssemblyVersion=${{ steps.git_version.outputs.version }} `
-          -p:FileVersion=${{ steps.git_version.outputs.version }} `
+          -p:InformationalVersion=${{ steps.git_version.outputs.version }} `
+          -p:AssemblyVersion=${{ steps.git_version.outputs.numeric_version }} `
+          -p:FileVersion=${{ steps.git_version.outputs.numeric_version }} `
           -o publish
       
     - name: Verify executable exists
