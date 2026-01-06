@@ -62,9 +62,10 @@ namespace TrainMeX.ViewModels {
             }
         }
 
-        // MPV-style cubic volume scaling
-        // 100% UI volume (1.0) = 1.0^3 = 1.0 actual volume
-        public double ActualVolume => Math.Pow(_volume, 3);
+        // MPV-style quadratic volume scaling
+        // 100% UI volume (1.0) = 1.0^2 = 1.0 actual volume
+        // Quadratic is better balanced: 50% slider = 25% power (vs 12.5% in cubic)
+        public double ActualVolume => Math.Pow(_volume, 2);
 
         private double _speedRatio = 1.0;
         public virtual double SpeedRatio {

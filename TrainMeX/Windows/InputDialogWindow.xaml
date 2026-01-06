@@ -67,14 +67,13 @@
                             Background="#FF69B4"
                             Foreground="White"
                             BorderThickness="0"
-                            Content="✕" 
-                            FontSize="18"
                             ToolTip="Cancel">
                         <Button.Resources>
                             <Style TargetType="Border">
                                 <Setter Property="CornerRadius" Value="0,8,0,0"/>
                             </Style>
                         </Button.Resources>
+                        <Path Data="{StaticResource Icon_Close}" Fill="White" Stretch="Uniform" Width="14" Height="14"/>
                     </Button>
                 </Grid>
             </Border>

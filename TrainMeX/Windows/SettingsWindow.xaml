@@ -185,9 +185,9 @@
                         VerticalAlignment="Top"
                         Width="30" Height="30"
                         Background="Transparent"
-                        Foreground="{StaticResource TextSecondary}"
-                        Content="x"
-                        FontSize="16"/>
+                        Foreground="{StaticResource TextSecondary}">
+                    <Path Data="{StaticResource Icon_Close}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="12" Height="12"/>
+                </Button>
             </Grid>
 
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10,10,10,0" Padding="0,0,10,0">
@@ -380,54 +380,40 @@
                             <!-- Reset Positions Button -->
                             <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
                                     Command="{Binding ResetPositionsCommand}"
-                                    Content="Reset All Saved Positions"
                                     Style="{StaticResource DangerButtonStyle}"
                                     Height="32" Padding="10,0"
-                                    HorizontalAlignment="Stretch"/>
+                                    HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal">
+                                    <Path Data="{StaticResource Icon_Trash}" Fill="White" Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Reset All Saved Positions" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Button>
                         </Grid>
                     </Expander>
                 </StackPanel>
             </ScrollViewer>
 
             <!-- Fixed Footer with Buttons -->
-            <Grid Grid.Row="2" Margin="20,15,20,20">
+            <Grid Grid.Row="2" Margin="20,12,20,20">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Command="{Binding CancelCommand}" 
                             Style="{StaticResource SecondaryButtonStyle}" 
                             Width="100" 
                             Height="38"
-                            Margin="0,0,12,0" 
-                            Content="Cancel"
-                            Background="White"
-                            Foreground="#1A0510"
-                            BorderThickness="0">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="8"/>
-                            </Style>
-                        </Button.Resources>
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
+                            Margin="0,0,12,0">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource Icon_Close}" Fill="{StaticResource AccentPrimary}" Stretch="Uniform" Width="10" Height="10" Margin="0,0,8,0"/>
+                            <TextBlock Text="Cancel" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                        </StackPanel>
                     </Button>
                     <Button Command="{Binding OkCommand}" 
+                            Style="{StaticResource PrimaryButtonStyle}" 
                             Width="150" 
-                            Height="38"
-                            Content="Save Changes"
-                            Background="{StaticResource AccentPrimary}"
-                            Foreground="White"
-                            FontWeight="SemiBold">
-                        <Button.Template>
-                            <ControlTemplate TargetType="Button">
-                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
-                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                </Border>
-                            </ControlTemplate>
-                        </Button.Template>
+                            Height="38">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="{StaticResource Icon_Save}" Fill="White" Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0"/>
+                            <TextBlock Text="Save Changes" VerticalAlignment="Center" FontWeight="Bold"/>
+                        </StackPanel>
                     </Button>
                 </StackPanel>
             </Grid>
