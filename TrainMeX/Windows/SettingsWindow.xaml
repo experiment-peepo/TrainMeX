@@ -59,6 +59,106 @@
             <sys:String>NumPad8</sys:String>
             <sys:String>NumPad9</sys:String>
         </x:Array>
+
+        <!-- Modern Collapsible Section Style -->
+        <Style x:Key="SettingsExpanderStyle" TargetType="{x:Type Expander}">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Expander}">
+                        <Grid Margin="0,5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition x:Name="ContentRow" Height="0"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            
+                            <ToggleButton x:Name="HeaderSite"
+                                          Background="{TemplateBinding Background}"
+                                          BorderThickness="0"
+                                          Content="{TemplateBinding Header}"
+                                          IsChecked="{Binding IsExpanded, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          Padding="0,15"
+                                          Cursor="Hand">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="{x:Type ToggleButton}">
+                                        <Border Background="{TemplateBinding Background}" IsHitTestVisible="True">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                
+                                                <ContentPresenter Content="{TemplateBinding Content}"
+                                                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                                  VerticalAlignment="Center"
+                                                                  Margin="0">
+                                                    <ContentPresenter.Resources>
+                                                        <Style TargetType="{x:Type TextBlock}">
+                                                            <Setter Property="FontSize" Value="16"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                                                        </Style>
+                                                    </ContentPresenter.Resources>
+                                                </ContentPresenter>
+                                                
+                                                <Path x:Name="Arrow"
+                                                      Grid.Column="1"
+                                                      Data="M 1,1 L 7,7 L 13,1"
+                                                      Stroke="{StaticResource TextSecondary}"
+                                                      StrokeThickness="2"
+                                                      VerticalAlignment="Center"
+                                                      Margin="10,0,5,0"
+                                                      RenderTransformOrigin="0.5,0.5">
+                                                    <Path.RenderTransform>
+                                                        <RotateTransform Angle="0"/>
+                                                    </Path.RenderTransform>
+                                                </Path>
+                                            </Grid>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsChecked" Value="True">
+                                                <Setter TargetName="Arrow" Property="RenderTransform">
+                                                    <Setter.Value>
+                                                        <RotateTransform Angle="180"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Trigger>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Arrow" Property="Stroke" Value="{StaticResource AccentPrimary}"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            
+                            <Border x:Name="ExpandSite"
+                                    Grid.Row="1"
+                                    Visibility="Collapsed"
+                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                    VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                    Padding="10,10,10,20">
+                                <ContentPresenter/>
+                            </Border>
+                            
+                            <Border Grid.Row="2" 
+                                    Height="1" 
+                                    Background="#22FFFFFF" 
+                                    Margin="0,5,0,0"/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsExpanded" Value="True">
+                                <Setter TargetName="ExpandSite" Property="Visibility" Value="Visible"/>
+                                <Setter TargetName="ContentRow" Property="Height" Value="*"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </Window.Resources>
     <Border x:Name="MainBorder" 
             Background="{StaticResource BackgroundPrimary}" 
@@ -72,61 +172,49 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Header with gradient and rounded corners -->
-            <Border x:Name="HeaderBorder" CornerRadius="8,8,0,0" 
-                    Height="50"
-                    Grid.Row="0">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#4D2F3F" Offset="0"/>
-                        <GradientStop Color="#3D1F2E" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-                <Grid FlowDirection="RightToLeft" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="50"/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Button Style="{StaticResource ControlButton}" Click="CloseButton_Click" ToolTip="Close settings">x</Button>
-                    <Label Grid.Column="1" Style="{StaticResource LowerTitle}" 
-                           HorizontalAlignment="Left" 
-                           Margin="10,0,0,0" 
-                           VerticalAlignment="Center">Settings</Label>
-                </Grid>
-            </Border>
+            <!-- Header with modernized title and subtitle -->
+            <Grid Grid.Row="0" Margin="20,20,20,10" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Settings" Style="{StaticResource WindowHeaderTitleStyle}"/>
+                    <TextBlock Text="Configure your TrainMeX preferences and playback options" Style="{StaticResource WindowHeaderSubtitleStyle}"/>
+                </StackPanel>
+                <Button Style="{StaticResource ControlButton}" 
+                        Click="CloseButton_Click" 
+                        ToolTip="Close settings"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Width="30" Height="30"
+                        Background="Transparent"
+                        Foreground="{StaticResource TextSecondary}"
+                        Content="x"
+                        FontSize="16"/>
+            </Grid>
 
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10,10,10,0" Padding="0,0,10,0">
                 <StackPanel>
                     <!-- General Settings -->
-                    <GroupBox Header="General" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
-                        <Grid Margin="10">
+                    <Expander Header="General" Style="{StaticResource SettingsExpanderStyle}" IsExpanded="{Binding IsGeneralExpanded}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                            </Grid.RowDefinitions>
-
                             <!-- Default Monitor -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,10">
-                                <Label Content="Default Monitor" Foreground="{StaticResource TextPrimary}" FontSize="12" Padding="0"/>
-                                <TextBlock Text="Monitor to use by default when adding new videos" Foreground="{StaticResource TextTertiary}" FontSize="10" FontStyle="Italic" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <Label Content="Default Monitor" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Monitor used by default for new videos" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <ComboBox Grid.Row="0" Grid.Column="1" Width="180"
+                            <ComboBox Grid.Column="1" Width="180"
                                       ItemsSource="{Binding AvailableMonitors}"
                                       SelectedItem="{Binding SelectedDefaultMonitor}"
                                       Style="{StaticResource PinkComboBoxStyle}"
-                                      VerticalAlignment="Top"/>
-
-
+                                      VerticalAlignment="Center"/>
                         </Grid>
-                    </GroupBox>
+                    </Expander>
 
                     <!-- Playback Settings -->
-                    <GroupBox Header="Playback" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
-                        <Grid Margin="10">
+                    <Expander Header="Playback" Style="{StaticResource SettingsExpanderStyle}" IsExpanded="{Binding IsPlaybackExpanded}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -136,75 +224,106 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-
+ 
                             <!-- Default Opacity -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,10" VerticalAlignment="Center">
-                                <Label Content="Default Opacity" Foreground="{StaticResource TextPrimary}" FontSize="12" Padding="0"/>
-                                <TextBlock Text="Opacity for new videos" Foreground="{StaticResource TextTertiary}" FontSize="10" FontStyle="Italic" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
+                                <Label Content="Default Opacity" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Initial opacity level for new videos" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,15">
                                 <Slider Width="120" Value="{Binding DefaultOpacity, Converter={StaticResource OpacityScaleConverter}}"
-                                        Minimum="0" Maximum="1.0" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.01"
+                                        Minimum="0" Maximum="1.0" SmallChange="0.1" LargeChange="0.1" TickFrequency="0.1"
+                                        TickPlacement="BottomRight"
                                         Style="{StaticResource NeonSliderStyle}" IsSnapToTickEnabled="True"/>
                                 <TextBlock Text="{Binding DefaultOpacity, Converter={StaticResource OpacityToIntConverter}}" 
                                            Foreground="{StaticResource TextSecondary}" FontSize="12" Width="30" TextAlignment="Right" VerticalAlignment="Center" Margin="5,0,0,0"/>
                             </StackPanel>
-
+ 
                             <!-- Default Volume -->
-                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,10" VerticalAlignment="Center">
-                                <Label Content="Default Volume" Foreground="{StaticResource TextPrimary}" FontSize="12" Padding="0"/>
-                                <TextBlock Text="Volume for new videos" Foreground="{StaticResource TextTertiary}" FontSize="10" FontStyle="Italic" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
+                                <Label Content="Default Volume" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Initial volume level for new videos" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,15">
                                 <Slider Width="120" Value="{Binding DefaultVolume}"
-                                        Minimum="0" Maximum="1" SmallChange="0.01" LargeChange="0.1" TickFrequency="0.01"
+                                        Minimum="0" Maximum="1" SmallChange="0.1" LargeChange="0.1" TickFrequency="0.1"
+                                        TickPlacement="BottomRight"
                                         Style="{StaticResource NeonSliderStyle}" IsSnapToTickEnabled="True"/>
                                 <TextBlock Text="{Binding DefaultVolume, StringFormat='{}{0:P0}'}" 
                                            Foreground="{StaticResource TextSecondary}" FontSize="12" Width="30" TextAlignment="Right" VerticalAlignment="Center" Margin="5,0,0,0"/>
                             </StackPanel>
-
+ 
                             <!-- Opaque Mode -->
                             <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <Label Content="Opaque Mode" Foreground="{StaticResource TextPrimary}" FontSize="12" Padding="0"/>
-                                <TextBlock Text="Force 100% opacity for all videos" Foreground="{StaticResource TextTertiary}" FontSize="10" FontStyle="Italic" Margin="0,2,0,0"/>
+                                <Label Content="Opaque Mode" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Force videos to be fully opaque" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
                             <CheckBox Grid.Row="2" Grid.Column="1" 
                                       IsChecked="{Binding AlwaysOpaque}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"/>
                         </Grid>
-                    </GroupBox>
+                    </Expander>
 
                     <!-- Application Settings -->
-                    <GroupBox Header="Application" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
-                        <Grid Margin="10">
+                    <Expander Header="Application" Style="{StaticResource SettingsExpanderStyle}" IsExpanded="{Binding IsApplicationExpanded}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+ 
                             <!-- Always on Top -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <Label Content="Always on Top (Launcher)" Foreground="{StaticResource TextPrimary}" FontSize="12" Padding="0"/>
-                                <TextBlock Text="Keep launcher accessible" Foreground="{StaticResource TextTertiary}" FontSize="10" FontStyle="Italic" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
+                                <Label Content="Always on Top (Launcher)" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Keep the launcher window above others" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
                             <CheckBox Grid.Row="0" Grid.Column="1" 
                                       IsChecked="{Binding LauncherAlwaysOnTop}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
-                                      VerticalAlignment="Center"/>
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,0,15"/>
+                            
+                            <!-- HotScreen Integration -->
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
+                                <Label Content="HotScreen Integration" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Sync window positions for accurate censoring" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <CheckBox Grid.Row="1" Grid.Column="1" 
+                                      IsChecked="{Binding EnableHotScreenIntegration}"
+                                      Style="{StaticResource ModernCheckBoxStyle}"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,0,15"/>
+                            
+                            <!-- Calibration Button -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
+                                <Label Content="HotScreen Calibration" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Show calibration pattern for auto-alignment" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <Button Grid.Row="2" Grid.Column="1"
+                                    Content="Show Calibration Pattern"
+                                    Click="ShowCalibrationButton_Click"
+                                    Style="{StaticResource PrimaryButtonStyle}"
+                                    VerticalAlignment="Center"
+                                    Padding="10,5"/>
                         </Grid>
-                    </GroupBox>
+                    </Expander>
 
                     <!-- Hotkeys -->
-                    <GroupBox Header="Hotkeys" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
-                        <Grid Margin="10">
+                    <Expander Header="Hotkeys" Style="{StaticResource SettingsExpanderStyle}" IsExpanded="{Binding IsHotkeysExpanded}">
+                        <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Margin="0,0,0,5">
-                                <Label Content="Panic Hotkey" Foreground="{StaticResource TextPrimary}" FontSize="12" Padding="0"/>
-                                <TextBlock Text="Global hotkey to stop all video playback immediately" Foreground="{StaticResource TextTertiary}" FontSize="10" FontStyle="Italic" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="0" Margin="0,0,0,10">
+                                <Label Content="Panic Hotkey" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Global hotkey to stop all playback immediately" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
                             <Grid Grid.Row="1">
                                 <Grid.ColumnDefinitions>
@@ -221,11 +340,11 @@
                                 <ComboBox Grid.Column="2" Width="100" ItemsSource="{StaticResource KeyList}" SelectedItem="{Binding PanicHotkeyKey}" Style="{StaticResource PinkComboBoxStyle}"/>
                             </Grid>
                         </Grid>
-                    </GroupBox>
+                    </Expander>
 
                     <!-- History Settings -->
-                    <GroupBox Header="History" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
-                        <Grid Margin="10">
+                    <Expander Header="History" Style="{StaticResource SettingsExpanderStyle}" IsExpanded="{Binding IsHistoryExpanded}">
+                        <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
@@ -234,147 +353,84 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-
-
-
+ 
                             <!-- Remember Last Playlist -->
-                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,10" VerticalAlignment="Center">
-                                <Label Content="Remember last playlist" Foreground="{StaticResource TextPrimary}" FontSize="12" Padding="0"/>
-                                <TextBlock Text="Restore your playlist when reopening the app" Foreground="{StaticResource TextTertiary}" FontSize="10" FontStyle="Italic" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
+                                <Label Content="Remember last playlist" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Restore your list when reopening the app" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <CheckBox Grid.Row="1" Grid.Column="1" 
+                            <CheckBox Grid.Row="0" Grid.Column="1" 
                                       IsChecked="{Binding RememberLastPlaylist}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
-                                      VerticalAlignment="Center"/>
-
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,0,15"/>
+ 
                             <!-- Remember File Position -->
-                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <Label Content="Remember file position" Foreground="{StaticResource TextPrimary}" FontSize="12" Padding="0"/>
-                                <TextBlock Text="Resume videos from where you left off" Foreground="{StaticResource TextTertiary}" FontSize="10" FontStyle="Italic" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
+                                <Label Content="Remember file position" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
+                                <TextBlock Text="Resume videos from where you left off" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
                             </StackPanel>
-                            <CheckBox Grid.Row="2" Grid.Column="1" 
+                            <CheckBox Grid.Row="1" Grid.Column="1" 
                                       IsChecked="{Binding RememberFilePosition}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
-                                      VerticalAlignment="Center"/>
-
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,0,15"/>
+ 
                             <!-- Reset Positions Button -->
-                            <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                            <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
                                     Command="{Binding ResetPositionsCommand}"
                                     Content="Reset All Saved Positions"
                                     Style="{StaticResource DangerButtonStyle}"
-                                    Height="36" Padding="10,5" Margin="0,15,0,0"
+                                    Height="32" Padding="10,0"
                                     HorizontalAlignment="Stretch"/>
                         </Grid>
-                    </GroupBox>
+                    </Expander>
                 </StackPanel>
             </ScrollViewer>
 
             <!-- Fixed Footer with Buttons -->
-            <Border Grid.Row="2" CornerRadius="0,0,8,8" BorderThickness="0,1,0,0" BorderBrush="#4D2F3F">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#3D1F2E" Offset="0"/>
-                        <GradientStop Color="#2D0F1A" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="15,12,15,12">
+            <Grid Grid.Row="2" Margin="20,15,20,20">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Command="{Binding CancelCommand}" 
                             Style="{StaticResource SecondaryButtonStyle}" 
-                            Width="120" 
-                            Height="36"
-                            Margin="0,0,15,0" 
-                            Content="Cancel">
+                            Width="100" 
+                            Height="38"
+                            Margin="0,0,12,0" 
+                            Content="Cancel"
+                            Background="White"
+                            Foreground="#1A0510"
+                            BorderThickness="0">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="8"/>
+                            </Style>
+                        </Button.Resources>
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border x:Name="border"
-                                        Background="{TemplateBinding Background}" 
-                                        BorderBrush="{TemplateBinding BorderBrush}" 
-                                        BorderThickness="{TemplateBinding BorderThickness}"
-                                        CornerRadius="4"
-                                        Padding="{TemplateBinding Padding}">
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="2" Opacity="0.3"/>
-                                    </Border.Effect>
+                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#4D2F3F"/>
-                                        <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
-                                        <Setter Property="Foreground" Value="{StaticResource AccentSecondary}"/>
-                                        <Setter TargetName="border" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#FF69B4" BlurRadius="12" ShadowDepth="0" Opacity="0.6"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="RenderTransform">
-                                            <Setter.Value>
-                                                <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#5D3F4F"/>
-                                        <Setter Property="RenderTransform">
-                                            <Setter.Value>
-                                                <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
                     <Button Command="{Binding OkCommand}" 
-                            Width="120" 
-                            Height="36"
-                            Content="Save">
+                            Width="150" 
+                            Height="38"
+                            Content="Save Changes"
+                            Background="{StaticResource AccentPrimary}"
+                            Foreground="White"
+                            FontWeight="SemiBold">
                         <Button.Template>
                             <ControlTemplate TargetType="Button">
-                                <Border x:Name="border"
-                                        Background="{StaticResource AccentPrimary}" 
-                                        CornerRadius="4"
-                                        Padding="16,8">
-                                    <Border.Effect>
-                                        <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="2" Opacity="0.3"/>
-                                    </Border.Effect>
-                                    <ContentPresenter HorizontalAlignment="Center" 
-                                                    VerticalAlignment="Center"
-                                                    TextElement.Foreground="{StaticResource TextPrimary}"
-                                                    TextElement.FontWeight="SemiBold"/>
+                                <Border Background="{TemplateBinding Background}" CornerRadius="8">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
-                                <ControlTemplate.Triggers>
-                                    <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="{StaticResource AccentSecondary}"/>
-                                        <Setter TargetName="border" Property="Effect">
-                                            <Setter.Value>
-                                                <DropShadowEffect Color="#FF69B4" BlurRadius="16" ShadowDepth="0" Opacity="0.8"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="RenderTransform">
-                                            <Setter.Value>
-                                                <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                        <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
-                                    </Trigger>
-                                    <Trigger Property="IsPressed" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#FF8CC5"/>
-                                        <Setter Property="RenderTransform">
-                                            <Setter.Value>
-                                                <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
-                                            </Setter.Value>
-                                        </Setter>
-                                    </Trigger>
-                                </ControlTemplate.Triggers>
                             </ControlTemplate>
                         </Button.Template>
                     </Button>
                 </StackPanel>
-            </Border>
+            </Grid>
 
 
     </Grid>

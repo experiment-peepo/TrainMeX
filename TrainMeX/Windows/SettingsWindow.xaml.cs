@@ -43,6 +43,10 @@ namespace TrainMeX.Windows {
             this.Close();
         }
 
+        private void ShowCalibrationButton_Click(object sender, RoutedEventArgs e) {
+            var calibrationWindow = new CalibrationWindow();
+            calibrationWindow.Show();
+        }
 
     }
 }

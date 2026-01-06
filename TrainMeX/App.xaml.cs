@@ -24,18 +24,14 @@ namespace TrainMeX {
         public static Classes.TelemetryService Telemetry => Classes.ServiceContainer.TryGet<Classes.TelemetryService>(out var telemetry) ? telemetry : null;
 
         protected override void OnStartup(StartupEventArgs e) {
-            base.OnStartup(e);
             
-            // Enable GPU acceleration - Default enables hardware acceleration when available
-            // WPF MediaElement uses Windows Media Foundation which automatically uses GPU for video decoding
-            System.Windows.Media.RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
-            
-            // Add global exception handlers
+            // Add global exception handlers BEFORE anything else
             this.DispatcherUnhandledException += (s, args) => {
                 try {
                     // Log the full technical details
                     Classes.Logger.Error("Unhandled exception in UI thread", args.Exception);
-                    
+                    Console.Error.WriteLine($"Unhandled Exception: {args.Exception}");
+
                     // Show user-friendly message
                     var userMessage = "An unexpected error occurred in the application.\n\n" +
                                      "The error details have been logged. If this problem persists, " +
@@ -61,7 +57,8 @@ namespace TrainMeX {
                     var ex = args.ExceptionObject as Exception;
                     // Log the full technical details
                     Classes.Logger.Error("Fatal unhandled exception", ex);
-                    
+                    Console.Error.WriteLine($"Fatal Exception: {ex}");
+
                     // Show user-friendly message
                     var userMessage = "A critical error occurred and the application needs to close.\n\n" +
                                      "The error details have been logged. Please check the application logs " +
@@ -86,6 +83,23 @@ namespace TrainMeX {
             Classes.ServiceContainer.Register(new Classes.HotkeyService());
             Classes.ServiceContainer.Register(new Classes.UrlCacheService());
             Classes.ServiceContainer.Register(new Classes.TelemetryService());
+
+            // base.OnStartup starts the UI - call LAST
+            base.OnStartup(e);
+        }
+
+        protected override void OnExit(ExitEventArgs e) {
+            // Ensure all video players are stopped and disposed
+            if (Classes.ServiceContainer.TryGet<Classes.VideoPlayerService>(out var videoService)) {
+                videoService.StopAll();
+            }
+
+            // Ensure hotkeys are unregistered
+            if (Classes.ServiceContainer.TryGet<Classes.HotkeyService>(out var hotkeyService)) {
+                hotkeyService.Dispose();
+            }
+
+            base.OnExit(e);
         }
     }
 }

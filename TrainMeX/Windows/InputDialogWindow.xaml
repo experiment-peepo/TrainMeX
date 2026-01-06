@@ -41,21 +41,41 @@
                     Grid.Row="0">
                 <Border.Background>
                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#4D2F3F" Offset="0"/>
-                        <GradientStop Color="#3D1F2E" Offset="1"/>
+                        <GradientStop Color="#3D0A1F" Offset="0"/>
+                        <GradientStop Color="#3D0A1F" Offset="1"/>
                     </LinearGradientBrush>
                 </Border.Background>
-                <Grid FlowDirection="RightToLeft" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+                <Grid MouseLeftButtonDown="Grid_MouseLeftButtonDown">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="50"/>
-                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <Button Style="{StaticResource ControlButton}" Click="CancelButton_Click" ToolTip="Cancel">x</Button>
-                    <Label Grid.Column="1" Style="{StaticResource LowerTitle}" 
-                           HorizontalAlignment="Left" 
-                           Margin="10,0,0,0" 
-                           VerticalAlignment="Center"
-                           Content="{Binding DialogTitle}"/>
+
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
+                        <Image Source="pack://application:,,,/Images/icon.ico" Width="20" Height="20" Margin="0,0,10,0">
+                            <Image.Effect>
+                                <DropShadowEffect Color="#FF69B4" BlurRadius="8" ShadowDepth="0" Opacity="0.5"/>
+                            </Image.Effect>
+                        </Image>
+                        <TextBlock Text="{Binding DialogTitle}" Foreground="White" FontSize="15" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="2" Style="{StaticResource ControlButton}" 
+                            Click="CancelButton_Click" 
+                            Width="50" Height="50" 
+                            Background="#FF69B4"
+                            Foreground="White"
+                            BorderThickness="0"
+                            Content="✕" 
+                            FontSize="18"
+                            ToolTip="Cancel">
+                        <Button.Resources>
+                            <Style TargetType="Border">
+                                <Setter Property="CornerRadius" Value="0,8,0,0"/>
+                            </Style>
+                        </Button.Resources>
+                    </Button>
                 </Grid>
             </Border>
             
@@ -63,9 +83,10 @@
             <StackPanel Margin="20" Grid.Row="1">
                 <Label Content="{Binding LabelText}" 
                        Foreground="{StaticResource TextPrimary}" 
-                       FontWeight="SemiBold" 
-                       FontSize="13"
-                       Margin="0,0,0,12"/>
+                       FontWeight="Bold" 
+                       FontSize="14"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,15"/>
                 <TextBox x:Name="InputTextBox"
                          Style="{StaticResource PinkTextBoxStyle}"
                          Text="{Binding InputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
@@ -85,8 +106,9 @@
                         Click="OkButton_Click"
                         Margin="5,0" 
                         Style="{StaticResource PrimaryButtonStyle}"
-                        FontSize="12"
-                        Padding="20,8"
+                        FontSize="14"
+                        FontWeight="Bold"
+                        Padding="25,10"
                         ToolTip="OK">
                     OK
                 </Button>
@@ -94,8 +116,8 @@
                         Click="CancelButton_Click"
                         Margin="5,0" 
                         Style="{StaticResource SecondaryButtonStyle}"
-                        FontSize="12"
-                        Padding="20,8"
+                        FontSize="14"
+                        Padding="25,10"
                         ToolTip="Cancel">
                     Cancel
                 </Button>

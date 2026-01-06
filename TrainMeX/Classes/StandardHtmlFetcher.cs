@@ -32,6 +32,8 @@ namespace TrainMeX.Classes {
 
         public async Task<string> FetchHtmlAsync(string url, CancellationToken cancellationToken = default) {
             try {
+                if (string.IsNullOrWhiteSpace(url)) return null;
+
                 Logger.Info($"Fetching HTML from: {url}");
                 var response = await _httpClient.GetAsync(url, cancellationToken);
                 response.EnsureSuccessStatusCode();
@@ -39,11 +41,14 @@ namespace TrainMeX.Classes {
                 Logger.Info($"Fetched {html.Length} characters from {url}");
                 return html;
             } catch (HttpRequestException ex) {
-                Logger.Error($"HTTP error fetching {url}: {ex.Message}", ex);
-                throw;
-            } catch (TaskCanceledException ex) {
-                Logger.Warning($"Request timeout fetching {url}: {ex.Message}");
-                throw;
+                Logger.Error($"HTTP error fetching {url}: {ex.Message}");
+                return null;
+            } catch (TaskCanceledException) {
+                // Return null on timeout/cancellation to avoid crashing callers
+                return null;
+            } catch (Exception ex) {
+                Logger.Warning($"Unexpected error fetching {url}: {ex.Message}");
+                return null;
             }
         }
 

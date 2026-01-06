@@ -23,6 +23,10 @@ namespace TrainMeX.Windows {
         private TimeSpan? _pendingResumePosition = null;
         private DateTime _lastPositionSaveTime = DateTime.MinValue;
         private System.Windows.Threading.DispatcherTimer _syncTimer;
+        private HotScreenBridge _hotScreenBridge;
+
+        public HypnoViewModel ViewModel => _viewModel;
+        public string ScreenDeviceName => _targetScreen?.DeviceName ?? "Unknown";
 
         public HypnoWindow(System.Windows.Forms.Screen screen = null) {
             InitializeComponent();
@@ -48,7 +52,28 @@ namespace TrainMeX.Windows {
             _viewModel.RequestStopBeforeSourceChange += ViewModel_RequestStopBeforeSourceChange;
             _viewModel.MediaErrorOccurred += ViewModel_MediaErrorOccurred;
             _viewModel.RequestSyncPosition += ViewModel_RequestSyncPosition;
+            _viewModel.TerminalFailure += ViewModel_TerminalFailure;
+            
+            // Initialize HotScreen integration if enabled
+            if (App.Settings.EnableHotScreenIntegration) {
+                _hotScreenBridge = new HotScreenBridge();
+            }
+            
+            // Update position when window moves/resizes
+            this.LocationChanged += (s, e) => UpdateHotScreenPosition();
+            this.SizeChanged += (s, e) => UpdateHotScreenPosition();
             _viewModel.PropertyChanged += ViewModel_PropertyChanged;
+            
+            // Cleanup HotScreen bridge on close
+            this.Closed += (s, e) => {
+                if (_hotScreenBridge != null) {
+                    var helper = new WindowInteropHelper(this);
+                    var screen = System.Windows.Forms.Screen.FromHandle(helper.Handle);
+                    int screenId = Array.IndexOf(System.Windows.Forms.Screen.AllScreens, screen);
+                    _hotScreenBridge.ClearWindowPosition(screenId);
+                    _hotScreenBridge.Dispose();
+                }
+            };
 
             // Initialize position reporting timer
             _syncTimer = new System.Windows.Threading.DispatcherTimer();
@@ -197,7 +222,6 @@ namespace TrainMeX.Windows {
             }
         }
 
-        public HypnoViewModel ViewModel => _viewModel;
 
         protected virtual void Dispose(bool disposing) {
             if (!_disposed) {
@@ -210,8 +234,12 @@ namespace TrainMeX.Windows {
                         _viewModel.RequestStopBeforeSourceChange -= ViewModel_RequestStopBeforeSourceChange;
                         _viewModel.MediaErrorOccurred -= ViewModel_MediaErrorOccurred;
                         _viewModel.RequestSyncPosition -= ViewModel_RequestSyncPosition;
+                        _viewModel.TerminalFailure -= ViewModel_TerminalFailure;
                         _viewModel.PropertyChanged -= ViewModel_PropertyChanged;
                     }
+
+                    // Unregister from VideoService before closing/disposing
+                    App.VideoService?.UnregisterPlayer(this);
 
                     if (_syncTimer != null) {
                         _syncTimer.Stop();
@@ -305,6 +333,19 @@ namespace TrainMeX.Windows {
             } catch (Exception ex) {
                 Logger.Error("Error in ViewModel_MediaErrorOccurred", ex);
             }
+        }
+
+        private void ViewModel_TerminalFailure(object sender, EventArgs e) {
+            if (_disposed) return;
+            
+            // Terminal failure means all videos failed. Close the window.
+            // Dispatch to UI thread just in case it's called from a background task
+            Dispatcher.InvokeAsync(() => {
+                if (!_disposed) {
+                    Logger.Info("[HypnoWindow] Terminal failure occurred. Closing window.");
+                    this.Close();
+                }
+            });
         }
 
         private void FirstVideo_MediaOpened(object sender, RoutedEventArgs e) {
@@ -419,6 +460,9 @@ namespace TrainMeX.Windows {
             }
         }
         
+        private void UpdateHotScreenPosition() {
+            _hotScreenBridge?.UpdateWindowPosition(this);
+        }
 
     }
 }

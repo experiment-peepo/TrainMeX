@@ -13,32 +13,34 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:TrainMeX"
-    StartupUri="Windows/LauncherWindow.xaml">
+    StartupUri="Windows/LauncherWindow.xaml"
+    ShutdownMode="OnMainWindowClose">
+
     <Application.Resources>
         <ResourceDictionary>
             <Style TargetType="Control" x:Key="BaseStyle">
-                <Setter Property="FontFamily" Value="Segoe UI, Roboto, Helvetica, Arial, sans-serif"/>
+                <Setter Property="FontFamily" Value="Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif"/>
             </Style>
             <Style TargetType="Control" BasedOn="{StaticResource BaseStyle}"/>
             <Style TargetType="TextBlock">
-                <Setter Property="FontFamily" Value="Segoe UI, Roboto, Helvetica, Arial, sans-serif"/>
+                <Setter Property="FontFamily" Value="Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif"/>
             </Style>
-            <!-- Color Resources - HotPink & LightPink Theme -->
-            <SolidColorBrush x:Key="BackgroundPrimary" Color="#2D0F1A"/> <!-- Dark pink base -->
-            <SolidColorBrush x:Key="BackgroundSecondary" Color="#3D1F2E"/> <!-- HotPink-tinted panels -->
-            <SolidColorBrush x:Key="BackgroundHeader" Color="#4D2F3F"/> <!-- HotPink header -->
-            <SolidColorBrush x:Key="AccentPrimary" Color="#FF69B4"/> <!-- HotPink -->
-            <SolidColorBrush x:Key="AccentSecondary" Color="#FFB6C1"/> <!-- LightPink -->
-            <SolidColorBrush x:Key="AccentHover" Color="#FF8CC5"/> <!-- Lighter HotPink hover -->
-            <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/> <!-- Pure white for maximum contrast -->
-            <SolidColorBrush x:Key="TextSecondary" Color="#FFE4E9"/> <!-- Light pink tinted for better readability -->
-            <SolidColorBrush x:Key="TextTertiary" Color="#FFD0D9"/> <!-- Lighter pink for tertiary text -->
-            <SolidColorBrush x:Key="BorderPink" Color="#FF69B4"/> <!-- HotPink border -->
-            <SolidColorBrush x:Key="ScrollbarThumb" Color="#44FF69B4"/> <!-- Translucent pink thumb -->
-            <SolidColorBrush x:Key="ScrollbarThumbHover" Color="#AAFF69B4"/> <!-- Brighter pink thumb -->
+            <!-- Color Resources - Deep Magenta & Midnight Palette -->
+            <SolidColorBrush x:Key="BackgroundPrimary" Color="#1A0510"/> <!-- Very Dark Pink (Main BG) -->
+            <SolidColorBrush x:Key="BackgroundSecondary" Color="#3D0A1F"/> <!-- Deep Rose (Cards/Panels) -->
+            <SolidColorBrush x:Key="BackgroundHeader" Color="#3D0A1F"/> <!-- Deep Rose (Header) -->
+            <SolidColorBrush x:Key="AccentPrimary" Color="#FF1493"/> <!-- Hot Pink (Primary) -->
+            <SolidColorBrush x:Key="AccentSecondary" Color="#FF69B4"/> <!-- Bright Fuchsia (Secondary/Active) -->
+            <SolidColorBrush x:Key="AccentHover" Color="#FF69B4"/> <!-- Bright Fuchsia (Hover) -->
+            <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/> <!-- White -->
+            <SolidColorBrush x:Key="TextSecondary" Color="#FFB6D9"/> <!-- Light Pink -->
+            <SolidColorBrush x:Key="TextTertiary" Color="#EDAEC0"/> <!-- Slightly darker Light Pink -->
+            <SolidColorBrush x:Key="BorderPink" Color="#FF1493"/> <!-- Hot Pink -->
+            <SolidColorBrush x:Key="ScrollbarThumb" Color="#44FF1493"/> <!-- Translucent Hot Pink -->
+            <SolidColorBrush x:Key="ScrollbarThumbHover" Color="#AAFF1493"/> <!-- Brighter Hot Pink -->
             <SolidColorBrush x:Key="SuccessColor" Color="#90EE90"/>
             <SolidColorBrush x:Key="WarningColor" Color="#FFD700"/>
-            <SolidColorBrush x:Key="ErrorColor" Color="#880808"/> <!-- Deep red for danger actions -->
+            <SolidColorBrush x:Key="ErrorColor" Color="#FF4444"/> <!-- Bright Red for error -->
 
             <!-- Animations -->
             <Storyboard x:Key="PulsingGlowStoryboard" RepeatBehavior="Forever" AutoReverse="True">
@@ -57,6 +59,7 @@
             </Storyboard>
             
             <Style TargetType="Label" x:Key="MainTitle">
+                <Setter Property="FontFamily" Value="Montserrat, Segoe UI, sans-serif"/>
                 <Setter Property="Foreground" Value="{StaticResource AccentPrimary}"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="FontSize" Value="32"/>
@@ -68,15 +71,36 @@
                 </Setter>
             </Style>
             <Style TargetType="Label" BasedOn="{StaticResource MainTitle}"/>
+            
             <Style x:Key="LowerTitle" TargetType="Label" BasedOn="{StaticResource MainTitle}">
                 <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
                 <Setter Property="FontSize" Value="14"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
                 <Setter Property="Effect" Value="{x:Null}"/>
             </Style>
+
+            <!-- Standardized Window Header Styles -->
+            <Style x:Key="WindowHeaderTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontFamily" Value="Montserrat, Segoe UI, sans-serif"/>
+                <Setter Property="FontSize" Value="24"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect Color="#FF69B4" BlurRadius="5" ShadowDepth="0" Opacity="0.3"/>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style x:Key="WindowHeaderSubtitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Foreground" Value="{StaticResource TextTertiary}"/>
+                <Setter Property="Margin" Value="0,4,0,0"/>
+            </Style>
             <Style TargetType="Button" x:Key="MainButton">
                 <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Padding" Value="16,10"/>
+                <Setter Property="Padding" Value="16,0"/>
+                <Setter Property="Height" Value="38"/> <!-- Standardized Height -->
                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                 <Setter Property="Background" Value="{StaticResource AccentPrimary}"/>
                 <Setter Property="Margin" Value="0,1,0,0"/>
@@ -148,10 +172,10 @@
                 </Style.Triggers>
             </Style>
             
-            <!-- Primary Button Style -->
             <Style x:Key="PrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource MainButton}">
                 <Setter Property="Background" Value="{StaticResource AccentPrimary}"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Height" Value="38"/>
             </Style>
             
             <!-- Secondary Button Style -->
@@ -162,7 +186,7 @@
                 <Setter Property="Foreground" Value="{StaticResource AccentPrimary}"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#4D2F3F"/>
+                        <Setter Property="Background" Value="#3D0A1F"/>
                         <Setter Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
                         <Setter Property="Foreground" Value="{StaticResource AccentSecondary}"/>
                     </Trigger>
@@ -178,6 +202,24 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
+            
+            
+            <Style x:Key="WindowHeaderCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource ControlButton}">
+                <Setter Property="HorizontalAlignment" Value="Right"/>
+                <Setter Property="VerticalAlignment" Value="Top"/>
+                <Setter Property="Width" Value="30"/>
+                <Setter Property="Height" Value="30"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+                <Setter Property="Content" Value="x"/>
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="ToolTip" Value="Close"/>
+            </Style>
+
+            <LinearGradientBrush x:Key="HeaderGradientBrush" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="#3D0A1F" Offset="0"/>
+                <GradientStop Color="#3D0A1F" Offset="1"/>
+            </LinearGradientBrush>
             
             <Style x:Key="SettingsCheckBoxStyle" TargetType="CheckBox">
                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
@@ -355,11 +397,11 @@
                                             </Grid>
                                             <ControlTemplate.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="Border" Property="Background" Value="#4D2F3F"/>
+                                                    <Setter TargetName="Border" Property="Background" Value="#3D0A1F"/>
                                                     <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
                                                 </Trigger>
                                                 <Trigger Property="IsChecked" Value="True">
-                                                    <Setter TargetName="Border" Property="Background" Value="#4D2F3F"/>
+                                                    <Setter TargetName="Border" Property="Background" Value="#3D0A1F"/>
                                                     <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
                                                 </Trigger>
                                             </ControlTemplate.Triggers>
@@ -470,13 +512,13 @@
                                     </Border>
                                     <ControlTemplate.Triggers>
                                         <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter Property="Background" Value="#4D2F3F"/>
+                                            <Setter Property="Background" Value="#3D0A1F"/>
                                             <Setter Property="Foreground" Value="{StaticResource AccentSecondary}"/>
                                             <Setter TargetName="OuterCircle" Property="Stroke" Value="{StaticResource AccentSecondary}"/>
                                             <Setter TargetName="InnerCircle" Property="Fill" Value="{StaticResource AccentSecondary}"/>
                                         </Trigger>
                                         <Trigger Property="IsSelected" Value="True">
-                                            <Setter Property="Background" Value="#3D1F2E"/>
+                                            <Setter Property="Background" Value="#3D0A1F"/>
                                             <Setter Property="Foreground" Value="{StaticResource AccentSecondary}"/>
                                             <Setter TargetName="OuterCircle" Property="Stroke" Value="{StaticResource AccentSecondary}"/>
                                             <Setter TargetName="InnerCircle" Property="Fill" Value="{StaticResource AccentSecondary}"/>
@@ -528,8 +570,12 @@
                                         </Setter>
                                     </Style>
                                 </Grid.Resources>
+                                <!-- Ticks -->
+                                <TickBar x:Name="TopTick" Fill="{StaticResource AccentPrimary}" Height="4" Margin="7,0,7,2" Placement="Top" Visibility="Collapsed" SnapsToDevicePixels="True"/>
+                                <TickBar x:Name="BottomTick" Fill="{StaticResource AccentPrimary}" Height="4" Margin="7,2,7,0" Placement="Bottom" Visibility="Collapsed" SnapsToDevicePixels="True"/>
+
                                 <!-- Track Background with gradient -->
-                                <Border x:Name="TrackBackground" Height="6" CornerRadius="3" VerticalAlignment="Center" Margin="5,0" IsHitTestVisible="False">
+                                <Border x:Name="TrackBackground" Height="6" CornerRadius="3" VerticalAlignment="Center" Margin="13,0" IsHitTestVisible="False">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
                                             <GradientStop Color="#33FFFFFF" Offset="0"/>
@@ -549,6 +595,18 @@
                                     </Track.Thumb>
                                 </Track>
                             </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="TickPlacement" Value="TopLeft">
+                                    <Setter TargetName="TopTick" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="TickPlacement" Value="BottomRight">
+                                    <Setter TargetName="BottomTick" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                                <Trigger Property="TickPlacement" Value="Both">
+                                    <Setter TargetName="TopTick" Property="Visibility" Value="Visible"/>
+                                    <Setter TargetName="BottomTick" Property="Visibility" Value="Visible"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
