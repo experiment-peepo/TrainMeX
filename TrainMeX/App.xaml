@@ -40,8 +40,18 @@
             <SolidColorBrush x:Key="WarningColor" Color="#FFD700"/>
             <SolidColorBrush x:Key="ErrorColor" Color="#880808"/> <!-- Deep red for danger actions -->
 
+            <LinearGradientBrush x:Key="HeaderGradientBrush" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="{Binding Source={StaticResource BackgroundHeader}, Path=Color}" Offset="0"/>
+                <GradientStop Color="{Binding Source={StaticResource BackgroundSecondary}, Path=Color}" Offset="1"/>
+            </LinearGradientBrush>
+
+            <LinearGradientBrush x:Key="FooterGradientBrush" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Color="{Binding Source={StaticResource BackgroundSecondary}, Path=Color}" Offset="0"/>
+                <GradientStop Color="{Binding Source={StaticResource BackgroundPrimary}, Path=Color}" Offset="1"/>
+            </LinearGradientBrush>
+
             <!-- Animations -->
-            <Storyboard x:Key="PulsingGlowStoryboard" RepeatBehavior="Forever" AutoReverse="True">
+             <Storyboard x:Key="PulsingGlowStoryboard" RepeatBehavior="Forever" AutoReverse="True">
                 <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)"
                                  From="0.4" To="0.8" Duration="0:0:1.5">
                     <DoubleAnimation.EasingFunction>
@@ -56,23 +66,33 @@
                 </DoubleAnimation>
             </Storyboard>
             
-            <Style TargetType="Label" x:Key="MainTitle">
+            <Style TargetType="Label" x:Key="BaseTitleStyle">
                 <Setter Property="Foreground" Value="{StaticResource AccentPrimary}"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
                 <Setter Property="FontSize" Value="32"/>
                 <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="FontFamily" Value="Segoe UI, Roboto, Helvetica, Arial, sans-serif"/>
+            </Style>
+
+            <Style TargetType="Label" x:Key="MainTitle" BasedOn="{StaticResource BaseTitleStyle}">
                 <Setter Property="Effect">
                     <Setter.Value>
-                        <DropShadowEffect Color="#FF69B4" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
+                        <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
                     </Setter.Value>
                 </Setter>
+                <Style.Triggers>
+                    <EventTrigger RoutedEvent="FrameworkElement.Loaded">
+                        <BeginStoryboard Storyboard="{StaticResource PulsingGlowStoryboard}"/>
+                    </EventTrigger>
+                </Style.Triggers>
             </Style>
+            
             <Style TargetType="Label" BasedOn="{StaticResource MainTitle}"/>
-            <Style x:Key="LowerTitle" TargetType="Label" BasedOn="{StaticResource MainTitle}">
+            
+            <Style x:Key="LowerTitle" TargetType="Label" BasedOn="{StaticResource BaseTitleStyle}">
                 <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
                 <Setter Property="FontSize" Value="14"/>
                 <Setter Property="FontWeight" Value="SemiBold"/>
-                <Setter Property="Effect" Value="{x:Null}"/>
             </Style>
             <Style TargetType="Button" x:Key="MainButton">
                 <Setter Property="BorderThickness" Value="0"/>
@@ -85,7 +105,7 @@
                     <Setter.Value>
                         <ControlTemplate TargetType="Button">
                             <Border Background="{TemplateBinding Background}" 
-                                    CornerRadius="0" 
+                                    CornerRadius="8" 
                                     Padding="{TemplateBinding Padding}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     BorderBrush="{TemplateBinding BorderBrush}">
@@ -99,31 +119,31 @@
                 </Setter>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="{StaticResource AccentSecondary}"/>
+                        <Setter Property="Background" Value="{StaticResource AccentHover}"/>
                         <Setter Property="Effect">
                             <Setter.Value>
-                                <DropShadowEffect Color="#FF69B4" BlurRadius="14" ShadowDepth="0" Opacity="0.7"/>
+                                <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="14" ShadowDepth="0" Opacity="0.7"/>
                             </Setter.Value>
                         </Setter>
                         <Setter Property="RenderTransform">
                             <Setter.Value>
-                                <ScaleTransform ScaleX="1.02" ScaleY="1.02"/>
+                                <ScaleTransform ScaleX="1.05" ScaleY="1.05"/>
                             </Setter.Value>
                         </Setter>
                         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="#FF8CC5"/>
+                        <Setter Property="Background" Value="{StaticResource AccentSecondary}"/>
                         <Setter Property="RenderTransform">
                             <Setter.Value>
-                                <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
+                                <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
                             </Setter.Value>
                         </Setter>
                     </Trigger>
                     <Trigger Property="IsEnabled" Value="False">
-                        <Setter Property="Background" Value="#666666"/>
-                        <Setter Property="Foreground" Value="#AAAAAA"/>
-                        <Setter Property="Opacity" Value="0.6"/>
+                        <Setter Property="Background" Value="{StaticResource BackgroundHeader}"/>
+                        <Setter Property="Foreground" Value="{StaticResource TextTertiary}"/>
+                        <Setter Property="Opacity" Value="0.5"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -133,17 +153,19 @@
                 <Setter Property="FontSize" Value="18"></Setter>
                 <Setter Property="Padding" Value="0"></Setter>
                 <Setter Property="Margin" Value="0"></Setter>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderThickness" Value="0"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#FF8CC5"></Setter>
+                        <Setter Property="Background" Value="{StaticResource ScrollbarThumbHover}"></Setter>
                         <Setter Property="Effect">
                             <Setter.Value>
-                                <DropShadowEffect Color="#FF69B4" BlurRadius="12" ShadowDepth="0" Opacity="0.8"/>
+                                <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="12" ShadowDepth="0" Opacity="0.8"/>
                             </Setter.Value>
                         </Setter>
                     </Trigger>
                     <Trigger Property="IsPressed" Value="True">
-                        <Setter Property="Background" Value="#FFB6C1"></Setter>
+                        <Setter Property="Background" Value="{StaticResource ScrollbarThumb}"></Setter>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -162,19 +184,35 @@
                 <Setter Property="Foreground" Value="{StaticResource AccentPrimary}"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#4D2F3F"/>
-                        <Setter Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
-                        <Setter Property="Foreground" Value="{StaticResource AccentSecondary}"/>
+                        <Setter Property="Background" Value="{StaticResource BackgroundHeader}"/>
+                        <Setter Property="BorderBrush" Value="{StaticResource AccentHover}"/>
+                        <Setter Property="Foreground" Value="{StaticResource AccentHover}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
             
             <!-- Danger Button Style -->
             <Style x:Key="DangerButtonStyle" TargetType="Button" BasedOn="{StaticResource MainButton}">
-                <Setter Property="Background" Value="{StaticResource ErrorColor}"/>
+                <Setter Property="Background" Value="White"/>
+                <Setter Property="Foreground" Value="#2D0F1A"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#A00909"/>
+                        <Setter Property="Background" Value="{StaticResource TextSecondary}"/>
+                        <Setter Property="Foreground" Value="#2D0F1A"/>
+                        <Setter Property="Effect">
+                            <Setter.Value>
+                                <DropShadowEffect Color="White" BlurRadius="15" ShadowDepth="0" Opacity="0.6"/>
+                            </Setter.Value>
+                        </Setter>
+                    </Trigger>
+                    <Trigger Property="IsPressed" Value="True">
+                        <Setter Property="Background" Value="{StaticResource TextTertiary}"/>
+                        <Setter Property="RenderTransform">
+                            <Setter.Value>
+                                <ScaleTransform ScaleX="0.95" ScaleY="0.95"/>
+                            </Setter.Value>
+                        </Setter>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -215,21 +253,21 @@
                                 <!-- Checkbox Square -->
                                 <Border x:Name="CheckBoxBorder"
                                         Grid.Column="0"
-                                        Width="16" 
-                                        Height="16"
-                                        BorderBrush="#5A5A5A"
-                                        BorderThickness="1"
-                                        Background="#3F3F46"
-                                        CornerRadius="2"
-                                        Margin="0,0,8,0"
+                                        Width="18" 
+                                        Height="18"
+                                        BorderBrush="{StaticResource BackgroundHeader}"
+                                        BorderThickness="1.5"
+                                        Background="{StaticResource BackgroundSecondary}"
+                                        CornerRadius="4"
+                                        Margin="0,0,10,0"
                                         VerticalAlignment="Center">
                                     <Path x:Name="CheckMark"
                                           Data="M 2,5 L 5,8 L 12,1"
-                                          Stroke="#FFFFFF"
-                                          StrokeThickness="2"
+                                          Stroke="{StaticResource TextPrimary}"
+                                          StrokeThickness="2.5"
                                           Visibility="Collapsed"
                                           Stretch="Uniform"
-                                          Margin="2"/>
+                                          Margin="3"/>
                                 </Border>
 
                                 <!-- Label Text -->
@@ -296,7 +334,7 @@
                                     <Setter Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
                                     <Setter TargetName="border" Property="Effect">
                                         <Setter.Value>
-                                            <DropShadowEffect Color="#FF69B4" BlurRadius="8" ShadowDepth="0" Opacity="0.4"/>
+                                            <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="8" ShadowDepth="0" Opacity="0.4"/>
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>
@@ -304,7 +342,7 @@
                                     <Setter Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
                                     <Setter TargetName="border" Property="Effect">
                                         <Setter.Value>
-                                            <DropShadowEffect Color="#FF69B4" BlurRadius="12" ShadowDepth="0" Opacity="0.6"/>
+                                            <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="12" ShadowDepth="0" Opacity="0.6"/>
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>
@@ -416,7 +454,7 @@
                                     <Setter Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
                                     <Setter Property="Effect">
                                         <Setter.Value>
-                                            <DropShadowEffect Color="#FF69B4" BlurRadius="10" ShadowDepth="0" Opacity="0.6"/>
+                                            <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="10" ShadowDepth="0" Opacity="0.6"/>
                                         </Setter.Value>
                                     </Setter>
                                 </Trigger>
@@ -529,11 +567,11 @@
                                     </Style>
                                 </Grid.Resources>
                                 <!-- Track Background with gradient -->
-                                <Border x:Name="TrackBackground" Height="6" CornerRadius="3" VerticalAlignment="Center" Margin="5,0" IsHitTestVisible="False">
+                                <Border x:Name="TrackBackground" Height="8" CornerRadius="4" VerticalAlignment="Center" Margin="5,0" IsHitTestVisible="False">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                            <GradientStop Color="#33FFFFFF" Offset="0"/>
-                                            <GradientStop Color="#55FFFFFF" Offset="1"/>
+                                            <GradientStop Color="{Binding Source={StaticResource BackgroundHeader}, Path=Color}" Offset="0"/>
+                                            <GradientStop Color="{Binding Source={StaticResource BackgroundSecondary}, Path=Color}" Offset="1"/>
                                         </LinearGradientBrush>
                                     </Border.Background>
                                 </Border>

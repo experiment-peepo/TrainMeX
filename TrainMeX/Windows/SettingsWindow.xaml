@@ -63,8 +63,8 @@
     <Border x:Name="MainBorder" 
             Background="{StaticResource BackgroundPrimary}" 
             BorderBrush="{StaticResource AccentPrimary}" 
-            BorderThickness="1"
-            CornerRadius="8">
+            BorderThickness="1.5"
+            CornerRadius="12">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -75,13 +75,8 @@
             <!-- Header with gradient and rounded corners -->
             <Border x:Name="HeaderBorder" CornerRadius="8,8,0,0" 
                     Height="50"
-                    Grid.Row="0">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#4D2F3F" Offset="0"/>
-                        <GradientStop Color="#3D1F2E" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
+                    Grid.Row="0"
+                    Background="{StaticResource HeaderGradientBrush}">
                 <Grid FlowDirection="RightToLeft" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="50"/>
@@ -98,7 +93,7 @@
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10,10,10,0" Padding="0,0,10,0">
                 <StackPanel>
                     <!-- General Settings -->
-                    <GroupBox Header="General" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
+                    <GroupBox Header="General" Margin="0,0,0,10" BorderBrush="{StaticResource BackgroundHeader}" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
                         <Grid Margin="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -125,7 +120,7 @@
                     </GroupBox>
 
                     <!-- Playback Settings -->
-                    <GroupBox Header="Playback" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
+                    <GroupBox Header="Playback" Margin="0,0,0,10" BorderBrush="{StaticResource BackgroundHeader}" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
                         <Grid Margin="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -176,7 +171,7 @@
                     </GroupBox>
 
                     <!-- Application Settings -->
-                    <GroupBox Header="Application" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
+                    <GroupBox Header="Application" Margin="0,0,0,10" BorderBrush="{StaticResource BackgroundHeader}" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
                         <Grid Margin="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -196,7 +191,7 @@
                     </GroupBox>
 
                     <!-- Hotkeys -->
-                    <GroupBox Header="Hotkeys" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
+                    <GroupBox Header="Hotkeys" Margin="0,0,0,10" BorderBrush="{StaticResource BackgroundHeader}" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
                         <Grid Margin="10">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
@@ -224,7 +219,7 @@
                     </GroupBox>
 
                     <!-- History Settings -->
-                    <GroupBox Header="History" Margin="0,0,0,10" BorderBrush="#4D2F3F" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
+                    <GroupBox Header="History" Margin="0,0,0,10" BorderBrush="{StaticResource BackgroundHeader}" Foreground="{StaticResource TextPrimary}" FontSize="14" FontWeight="SemiBold">
                         <Grid Margin="10">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -272,13 +267,8 @@
             </ScrollViewer>
 
             <!-- Fixed Footer with Buttons -->
-            <Border Grid.Row="2" CornerRadius="0,0,8,8" BorderThickness="0,1,0,0" BorderBrush="#4D2F3F">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#3D1F2E" Offset="0"/>
-                        <GradientStop Color="#2D0F1A" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
+            <Border Grid.Row="2" CornerRadius="0,0,12,12" BorderThickness="0,1.5,0,0" BorderBrush="{StaticResource BackgroundHeader}"
+                    Background="{StaticResource FooterGradientBrush}">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="15,12,15,12">
                     <Button Command="{Binding CancelCommand}" 
                             Style="{StaticResource SecondaryButtonStyle}" 
@@ -295,18 +285,18 @@
                                         CornerRadius="4"
                                         Padding="{TemplateBinding Padding}">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="2" Opacity="0.3"/>
+                                        <DropShadowEffect Color="{Binding Source={StaticResource BackgroundPrimary}, Path=Color}" BlurRadius="4" ShadowDepth="2" Opacity="0.3"/>
                                     </Border.Effect>
                                     <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                                 <ControlTemplate.Triggers>
                                     <Trigger Property="IsMouseOver" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#4D2F3F"/>
+                                        <Setter TargetName="border" Property="Background" Value="{StaticResource BackgroundHeader}"/>
                                         <Setter TargetName="border" Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
                                         <Setter Property="Foreground" Value="{StaticResource AccentSecondary}"/>
                                         <Setter TargetName="border" Property="Effect">
                                             <Setter.Value>
-                                                <DropShadowEffect Color="#FF69B4" BlurRadius="12" ShadowDepth="0" Opacity="0.6"/>
+                                                <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="12" ShadowDepth="0" Opacity="0.6"/>
                                             </Setter.Value>
                                         </Setter>
                                         <Setter Property="RenderTransform">
@@ -317,7 +307,7 @@
                                         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
                                     </Trigger>
                                     <Trigger Property="IsPressed" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#5D3F4F"/>
+                                        <Setter TargetName="border" Property="Background" Value="{StaticResource BackgroundSecondary}"/>
                                         <Setter Property="RenderTransform">
                                             <Setter.Value>
                                                 <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
@@ -339,7 +329,7 @@
                                         CornerRadius="4"
                                         Padding="16,8">
                                     <Border.Effect>
-                                        <DropShadowEffect Color="#000000" BlurRadius="4" ShadowDepth="2" Opacity="0.3"/>
+                                        <DropShadowEffect Color="{Binding Source={StaticResource BackgroundPrimary}, Path=Color}" BlurRadius="4" ShadowDepth="2" Opacity="0.3"/>
                                     </Border.Effect>
                                     <ContentPresenter HorizontalAlignment="Center" 
                                                     VerticalAlignment="Center"
@@ -351,7 +341,7 @@
                                         <Setter TargetName="border" Property="Background" Value="{StaticResource AccentSecondary}"/>
                                         <Setter TargetName="border" Property="Effect">
                                             <Setter.Value>
-                                                <DropShadowEffect Color="#FF69B4" BlurRadius="16" ShadowDepth="0" Opacity="0.8"/>
+                                                <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="16" ShadowDepth="0" Opacity="0.8"/>
                                             </Setter.Value>
                                         </Setter>
                                         <Setter Property="RenderTransform">
@@ -362,7 +352,7 @@
                                         <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
                                     </Trigger>
                                     <Trigger Property="IsPressed" Value="True">
-                                        <Setter TargetName="border" Property="Background" Value="#FF8CC5"/>
+                                        <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHover}"/>
                                         <Setter Property="RenderTransform">
                                             <Setter.Value>
                                                 <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>

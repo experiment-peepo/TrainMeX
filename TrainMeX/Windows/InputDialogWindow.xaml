@@ -26,8 +26,8 @@
     <Border x:Name="MainBorder" 
             Background="{StaticResource BackgroundPrimary}" 
             BorderBrush="{StaticResource AccentPrimary}" 
-            BorderThickness="1"
-            CornerRadius="8">
+            BorderThickness="1.5"
+            CornerRadius="12">
         <Grid Background="{StaticResource BackgroundPrimary}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="50"/>
@@ -36,15 +36,10 @@
             </Grid.RowDefinitions>
             
             <!-- Header with gradient and rounded corners -->
-            <Border x:Name="HeaderBorder" CornerRadius="8,8,0,0" 
+            <Border x:Name="HeaderBorder" CornerRadius="12,12,0,0" 
                     Height="50"
-                    Grid.Row="0">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                        <GradientStop Color="#4D2F3F" Offset="0"/>
-                        <GradientStop Color="#3D1F2E" Offset="1"/>
-                    </LinearGradientBrush>
-                </Border.Background>
+                    Grid.Row="0"
+                    Background="{StaticResource HeaderGradientBrush}">
                 <Grid FlowDirection="RightToLeft" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="50"/>

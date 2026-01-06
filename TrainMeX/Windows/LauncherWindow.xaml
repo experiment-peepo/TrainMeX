@@ -104,13 +104,8 @@
         <!-- Header with gradient and rounded corners -->
         <Border x:Name="HeaderBorder" CornerRadius="8,8,0,0" 
                 Height="50"
-                Grid.Row="0">
-            <Border.Background>
-                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-                    <GradientStop Color="#4D2F3F" Offset="0"/>
-                    <GradientStop Color="#3D1F2E" Offset="1"/>
-                </LinearGradientBrush>
-            </Border.Background>
+                Grid.Row="0"
+                Background="{StaticResource HeaderGradientBrush}">
             <Grid FlowDirection="RightToLeft" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="50"/>
@@ -179,7 +174,7 @@
         </Grid>
         
         <Grid Margin="0,8,0,0" Grid.Row="4" MinHeight="200">
-            <Border Background="#FF000000" Opacity="0.2" CornerRadius="8"/>
+            <Border Background="{StaticResource BackgroundPrimary}" Opacity="0.4" CornerRadius="12"/>
             
             <ListView x:Name="AddedFilesList" ItemsSource="{Binding AddedFiles}" SelectionMode="Single" 
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
@@ -234,7 +229,7 @@
                                 <Style TargetType="Border">
                                     <Setter Property="Effect">
                                         <Setter.Value>
-                                            <DropShadowEffect Color="#000000" BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
+                                            <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="8" ShadowDepth="2" Opacity="0.15"/>
                                         </Setter.Value>
                                     </Setter>
                                     <Style.Triggers>
@@ -243,7 +238,7 @@
                                             <Setter Property="BorderBrush" Value="{StaticResource BorderPink}"/>
                                             <Setter Property="Effect">
                                                 <Setter.Value>
-                                                    <DropShadowEffect Color="#FF69B4" BlurRadius="12" ShadowDepth="0" Opacity="0.5"/>
+                                                    <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="12" ShadowDepth="0" Opacity="0.5"/>
                                                 </Setter.Value>
                                             </Setter>
                                         </DataTrigger>
@@ -311,7 +306,7 @@
                                 </StackPanel>
                                           
                                 <Button Grid.Column="2" Content="✕" Width="20" Height="20" VerticalAlignment="Top" Margin="8,0,0,0"
-                                        Background="Transparent" Foreground="#AAFFFFFF" BorderThickness="0"
+                                        Background="Transparent" Foreground="{StaticResource TextSecondary}" BorderThickness="0"
                                         Command="{Binding DataContext.RemoveItemCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                         CommandParameter="{Binding}"
                                         ToolTip="Remove from playlist">
@@ -382,7 +377,7 @@
                 Visibility="{Binding StatusMessage, Converter={StaticResource StringToVisibilityConverter}}"
                 Grid.Row="6">
             <Border.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="2" Opacity="0.2"/>
+                <DropShadowEffect Color="{Binding Source={StaticResource BackgroundPrimary}, Path=Color}" BlurRadius="6" ShadowDepth="2" Opacity="0.2"/>
             </Border.Effect>
             <TextBlock Text="{Binding StatusMessage}" 
                       Foreground="{Binding StatusMessageType, Converter={StaticResource StatusMessageTypeToForegroundConverter}}" 
@@ -409,7 +404,7 @@
                 ToolTip="Start playing videos on assigned screens"
                 Grid.Row="8">
             <Button.Effect>
-                <DropShadowEffect Color="#FF69B4" BlurRadius="10" ShadowDepth="0" Opacity="0.4"/>
+                <DropShadowEffect Color="{Binding Source={StaticResource AccentPrimary}, Path=Color}" BlurRadius="10" ShadowDepth="0" Opacity="0.4"/>
             </Button.Effect>
             <Button.Triggers>
                 <EventTrigger RoutedEvent="Button.Loaded">
@@ -424,11 +419,11 @@
             <ItemsControl ItemsSource="{Binding ActivePlayers}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Margin="0,0,0,6" CornerRadius="6" BorderBrush="{StaticResource AccentPrimary}" BorderThickness="1" UseLayoutRounding="True" SnapsToDevicePixels="True">
+                        <Border Margin="0,0,0,8" CornerRadius="12" BorderBrush="{StaticResource AccentPrimary}" BorderThickness="1.5" UseLayoutRounding="True" SnapsToDevicePixels="True">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#0A0005" Offset="0"/>
-                                    <GradientStop Color="#000000" Offset="1"/>
+                                    <GradientStop Color="{StaticResource BackgroundPrimary}" Offset="0"/>
+                                    <GradientStop Color="{Binding Source={StaticResource BackgroundPrimary}, Path=Color}" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
                             <Grid Margin="12,6,8,6">
@@ -464,7 +459,7 @@
                 Grid.Row="11">End All Training</Button>
 
             <!-- Busy Indicator Overlay -->
-            <Grid Grid.Row="0" Grid.RowSpan="12" Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" IsHitTestVisible="True" Panel.ZIndex="1000">
+            <Grid Grid.Row="0" Grid.RowSpan="12" Background="{StaticResource BackgroundPrimary}" Opacity="0.7" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" IsHitTestVisible="True" Panel.ZIndex="1000">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Grid Width="60" Height="60">
                        <Grid.Resources>
