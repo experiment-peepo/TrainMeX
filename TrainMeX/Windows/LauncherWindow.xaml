@@ -17,7 +17,7 @@
         xmlns:vm="clr-namespace:TrainMeX.ViewModels"
         xmlns:sys="clr-namespace:System;assembly=mscorlib"
         mc:Ignorable="d"
-        Title="TrainMeX Launcher" Width="600" Height="700" MinWidth="600" MinHeight="400"
+        Title="TrainMeX Launcher" Width="700" Height="750" MinWidth="600" MinHeight="400"
         ResizeMode="CanResize"
         WindowStyle="None"
         WindowStartupLocation="CenterScreen"
@@ -47,10 +47,14 @@
         <Style x:Key="ActivePlayerButtonStyle" TargetType="Button" BasedOn="{StaticResource ControlButton}">
             <Setter Property="Foreground" Value="{StaticResource AccentPrimary}"/>
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="BorderBrush" Value="Transparent"/>
-            <Setter Property="Padding" Value="8,2"/>
+            <Setter Property="Padding" Value="0"/>
             <Setter Property="Margin" Value="4,0"/>
+            <Setter Property="Width" Value="36"/>
+            <Setter Property="Height" Value="36"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -58,8 +62,13 @@
                                 BorderBrush="{TemplateBinding BorderBrush}" 
                                 BorderThickness="{TemplateBinding BorderThickness}" 
                                 CornerRadius="4" 
-                                Padding="{TemplateBinding Padding}">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                Width="{TemplateBinding Width}"
+                                Height="{TemplateBinding Height}">
+                            <ContentPresenter HorizontalAlignment="Center" 
+                                            VerticalAlignment="Center"
+                                            Content="{TemplateBinding Content}"
+                                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                                            RecognizesAccessKey="True"/>
                         </Border>
                     </ControlTemplate>
                 </Setter.Value>
@@ -74,11 +83,12 @@
 
         <Style x:Key="MainActionButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="{StaticResource BackgroundSecondary}"/>
-            <Setter Property="BorderBrush" Value="#3D0A1F"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Foreground" Value="{StaticResource TextSecondary}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentPrimary}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
             <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Height" Value="45"/>
+            <Setter Property="Height" Value="42"/>
+            <Setter Property="Padding" Value="16,10"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -97,19 +107,15 @@
                             </ContentPresenter>
                         </Border>
                         <ControlTemplate.Triggers>
+                            <!-- Instant state changes - NO animations -->
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#3D0A1F"/>
-                                <Setter TargetName="Border" Property="BorderBrush" Value="#6D4F5F"/>
+                                <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentPrimary}"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
                                 <Setter Property="Foreground" Value="White"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Border" Property="Background" Value="#1A0510"/>
-                                <Setter Property="RenderTransform">
-                                    <Setter.Value>
-                                        <ScaleTransform ScaleX="0.98" ScaleY="0.98"/>
-                                    </Setter.Value>
-                                </Setter>
-                                <Setter Property="RenderTransformOrigin" Value="0.5,0.5"/>
+                                <Setter TargetName="Border" Property="Background" Value="#CC1493"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="{StaticResource AccentPrimary}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -118,22 +124,25 @@
         </Style>
         <Style x:Key="TrainingToggleButtonStyle" TargetType="Button" BasedOn="{StaticResource MainButton}">
             <!-- Base State (Train Me) -->
-            <Setter Property="Content" Value="▷  TRAIN ME!"/>
+            <Setter Property="Content" Value="▶ Start Gooning"/>
             <Setter Property="Background" Value="{StaticResource AccentPrimary}"/>
             <Setter Property="Command" Value="{Binding HypnotizeCommand}"/>
             <Setter Property="IsEnabled" Value="{Binding IsHypnotizeEnabled}"/>
-            <Setter Property="ToolTip" Value="Start playing videos on assigned screens"/>
+                    <Setter Property="ToolTip" Value="Start playback on all assigned screens"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="15"/>
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Padding" Value="24,12"/>
             
             <Style.Triggers>
                 <!-- Active State (End Training) -->
                 <DataTrigger Binding="{Binding HasActivePlayers}" Value="True">
                     <Setter Property="Background" Value="White"/>
                     <Setter Property="Foreground" Value="Black"/>
-                    <Setter Property="Content" Value="▢  End All Training"/>
+                    <Setter Property="Content" Value="⏹ End Gooning"/>
                     <Setter Property="Command" Value="{Binding DehypnotizeCommand}"/>
                     <Setter Property="IsEnabled" Value="True"/>
-                    <Setter Property="ToolTip" Value="Stop all video playback"/>
+                    <Setter Property="ToolTip" Value="Stop all active playback sessions"/>
                 </DataTrigger>
                 
                 <!-- Hover state for Active -->
@@ -143,6 +152,7 @@
                         <Condition Binding="{Binding RelativeSource={RelativeSource Self}, Path=IsMouseOver}" Value="True"/>
                     </MultiDataTrigger.Conditions>
                     <Setter Property="Background" Value="{StaticResource ErrorColor}"/>
+                    <Setter Property="Foreground" Value="White"/>
                 </MultiDataTrigger>
             </Style.Triggers>
         </Style>
@@ -194,114 +204,144 @@
                 </Grid.ColumnDefinitions>
                 
                 <!-- Title and Icon on Left -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
-                    <Image Source="pack://application:,,,/Images/icon.ico" Width="24" Height="24" Margin="0,0,8,0">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
+                    <Image Source="pack://application:,,,/Images/icon.ico" Width="20" Height="20" Margin="0,0,10,0">
                         <Image.Effect>
-                            <DropShadowEffect Color="#FF69B4" BlurRadius="8" ShadowDepth="0" Opacity="0.5"/>
+                            <DropShadowEffect Color="#FF69B4" BlurRadius="6" ShadowDepth="0" Opacity="0.4"/>
                         </Image.Effect>
                     </Image>
-                    <TextBlock Text="TrainMeX" Foreground="White" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="TrainMeX" Foreground="White" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" FontFamily="Segoe UI, sans-serif"/>
                 </StackPanel>
 
                 <!-- Control Buttons on Right -->
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,0">
-                    <Button Style="{StaticResource ControlButton}" Click="AboutButton_Click" Width="35" Height="50" ToolTip="About TrainMeX">
-                        <TextBlock Text="i" FontSize="16" FontWeight="Bold" FontFamily="Segoe UI Variable Display, Segoe UI, sans-serif"/>
+                    <Button Style="{StaticResource ControlButton}" Click="AboutButton_Click" Width="36" Height="50" ToolTip="About TrainMeX" Padding="0">
+                        <TextBlock Text="i" FontSize="14" FontWeight="SemiBold" FontFamily="Segoe UI, sans-serif" Foreground="{StaticResource TextSecondary}"/>
                     </Button>
-                    <Button Style="{StaticResource ControlButton}" Click="SettingsButton_Click" Width="35" Height="50" ToolTip="Open settings">
-                        <Path Data="{StaticResource Icon_Settings}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="16" Height="16"/>
+                    <Button Style="{StaticResource ControlButton}" Click="SettingsButton_Click" Width="36" Height="50" ToolTip="Open settings" Padding="0">
+                        <Path Data="{StaticResource Icon_Settings}" Stretch="Uniform" Width="16" Height="16"/>
                     </Button>
-                    <Button Style="{StaticResource ControlButton}" Command="{Binding MinimizeCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Width="40" Height="50" ToolTip="Minimize window">
-                        <Path Data="{StaticResource Icon_Minimize}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="10" Height="10"/>
+                    <Button Style="{StaticResource ControlButton}" Command="{Binding MinimizeCommand}" CommandParameter="{Binding RelativeSource={RelativeSource AncestorType=Window}}" Width="36" Height="50" ToolTip="Minimize window" Padding="0">
+                        <Path Data="{StaticResource Icon_Minimize}" Stretch="Uniform" Width="12" Height="12"/>
                     </Button>
-                    <Button x:Name="MaximizeButton" Style="{StaticResource ControlButton}" Click="MaximizeButton_Click" Width="40" Height="50" ToolTip="Maximize/Restore window">
-                        <Path Data="{StaticResource Icon_Maximize}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="10" Height="10"/>
+                    <Button x:Name="MaximizeButton" Style="{StaticResource ControlButton}" Click="MaximizeButton_Click" Width="36" Height="50" ToolTip="Maximize/Restore window" Padding="0">
+                        <Path Data="{StaticResource Icon_Maximize}" Stretch="Uniform" Width="12" Height="12"/>
                     </Button>
                     <Button Style="{StaticResource ControlButton}" 
                             Command="{Binding ExitCommand}" 
-                            Width="50" Height="50" 
-                            Background="#FF69B4"
+                            Width="44" Height="50" 
+                            Background="Transparent"
                             Foreground="White"
                             BorderThickness="0"
-                            ToolTip="Exit application">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="0,8,0,0"/>
-                            </Style>
-                        </Button.Resources>
-                        <Path Data="{StaticResource Icon_Close}" Fill="White" Stretch="Uniform" Width="12" Height="12"/>
+                            ToolTip="Exit application"
+                            Padding="0">
+                        <Path Data="{StaticResource Icon_Close}" Stretch="Uniform" Width="14" Height="14"/>
                     </Button>
                 </StackPanel>
             </Grid>
         </Border>
         
+        <!-- Content area with padding (excluding title bar) -->
+        <Border Padding="24" Grid.Row="1" Grid.RowSpan="11">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+        
         <!-- Title section with better spacing -->
-        <StackPanel Margin="0,20,0,20" Grid.Row="1">
-            <Label Style="{StaticResource MainTitle}" Margin="0,0,0,6">TrainMeX</Label>
+        <StackPanel Margin="0,20,0,24" Grid.Row="0">
+            <Label Style="{StaticResource MainTitle}" Margin="0,0,0,10">TrainMeX</Label>
             <Label Style="{StaticResource LowerTitle}" 
                    FontStyle="Italic"
+                   FontSize="13"
                    Margin="0,0,0,0">Overlay video player for sissies</Label>
         </StackPanel>
-        <Grid Margin="0,8,0,0" Grid.Row="2">
+        <Grid Margin="0,0,0,0" Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <Button x:Name="BrowseButton" Grid.Column="0" Margin="0,0,4,0" Style="{StaticResource MainActionButtonStyle}" Command="{Binding BrowseCommand}" ToolTip="Browse and add video files to playlist">
+            <Button x:Name="BrowseButton" Grid.Column="0" Margin="0,0,8,0" Style="{StaticResource MainActionButtonStyle}" Command="{Binding BrowseCommand}" ToolTip="Browse and add video files to playlist">
                 <StackPanel Orientation="Horizontal">
-                    <Path Data="{StaticResource Icon_Folder}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="16" Height="16" Margin="0,0,8,0"/>
-                    <TextBlock Text="Browse Videos"/>
+                    <Path Data="{StaticResource Icon_Folder}" Fill="{StaticResource TextPrimary}" Stretch="Uniform" Width="16" Height="16" Margin="0,0,10,0"/>
+                    <TextBlock Text="Browse Videos" FontWeight="SemiBold"/>
                 </StackPanel>
             </Button>
-            <Button x:Name="AddUrlButton" Grid.Column="1" Margin="4,0,4,0" Style="{StaticResource MainActionButtonStyle}" Command="{Binding AddUrlCommand}" ToolTip="Add a video URL to playlist">
+            <Button x:Name="AddUrlOrPlaylistButton" Grid.Column="1" Margin="8,0,0,0" Style="{StaticResource MainActionButtonStyle}" Command="{Binding AddUrlOrPlaylistCommand}" ToolTip="Add a video URL or import a playlist from supported sites">
                 <StackPanel Orientation="Horizontal">
-                    <Path Data="{StaticResource Icon_Link}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="16" Height="16" Margin="0,0,8,0"/>
-                    <TextBlock Text="Add URL"/>
-                </StackPanel>
-            </Button>
-            <Button x:Name="ImportPlaylistButton" Grid.Column="2" Margin="4,0,0,0" Style="{StaticResource MainActionButtonStyle}" Command="{Binding ImportPlaylistCommand}" ToolTip="Import playlist from supported sites">
-                <StackPanel Orientation="Horizontal">
-                    <Path Data="{StaticResource Icon_Import}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="16" Height="16" Margin="0,0,8,0"/>
-                    <TextBlock Text="Import Playlist"/>
+                    <Path Data="{StaticResource Icon_Link}" Fill="{StaticResource TextPrimary}" Stretch="Uniform" Width="16" Height="16" Margin="0,0,10,0"/>
+                    <TextBlock Text="Add URL" FontWeight="SemiBold"/>
                 </StackPanel>
             </Button>
             <!-- Progress indicator overlay -->
             <ProgressBar 
-                Grid.ColumnSpan="3"
+                Grid.ColumnSpan="2"
                 Height="4" 
                 VerticalAlignment="Bottom" 
-                Margin="10,0,10,2"
+                Margin="0,0,0,2"
                 IsIndeterminate="True"
                 Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}"
                 Foreground="{StaticResource AccentPrimary}"
                 Background="Transparent"
                 BorderThickness="0"/>
         </Grid>
-        <Grid Margin="0,0,0,0" Grid.Row="3">
+        <Grid Margin="0,24,0,16" Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Label Style="{StaticResource LowerTitle}" Grid.Column="0" FontSize="15" FontWeight="SemiBold">Playlist</Label>
-            <TextBlock Grid.Column="1" 
+            <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                <Label Style="{StaticResource LowerTitle}" FontSize="15" FontWeight="SemiBold" Margin="0">Playlist</Label>
+                <TextBlock 
                       Foreground="{StaticResource TextSecondary}" 
                       FontSize="12" 
                       VerticalAlignment="Center" 
                       Margin="8,0,0,0"
                       TextAlignment="Left"
                       FontWeight="SemiBold">
-                <TextBlock.Text>
-                    <MultiBinding StringFormat="({0} {1})">
-                        <Binding Path="AddedFiles.Count"/>
-                        <Binding Path="AddedFiles.Count" Converter="{StaticResource PluralConverter}"/>
-                    </MultiBinding>
-                </TextBlock.Text>
-            </TextBlock>
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="({0} {1})">
+                            <Binding Path="AddedFiles.Count"/>
+                            <Binding Path="AddedFiles.Count" Converter="{StaticResource PluralConverter}"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+            </StackPanel>
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Command="{Binding SavePlaylistCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Height="36" Padding="16,0" ToolTip="Save current playlist to a file">
+                    <StackPanel Orientation="Horizontal">
+                        <Path Data="{StaticResource Icon_Save}" Fill="{StaticResource AccentPrimary}" Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0"/>
+                        <TextBlock Text="Save" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource AccentPrimary}"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding LoadPlaylistCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0" Height="36" Padding="16,0" ToolTip="Load a playlist from a file">
+                    <StackPanel Orientation="Horizontal">
+                         <Path Data="{StaticResource Icon_Folder}" Fill="{StaticResource AccentPrimary}" Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0"/>
+                        <TextBlock Text="Load" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource AccentPrimary}"/>
+                    </StackPanel>
+                </Button>
+                <Button Command="{Binding ClearAllCommand}" Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,0,0" Height="36" Padding="16,0" ToolTip="Remove all videos from playlist">
+                    <StackPanel Orientation="Horizontal">
+                         <Path Data="{StaticResource Icon_Trash}" Fill="{StaticResource AccentPrimary}" Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0"/>
+                        <TextBlock Text="Clear" FontSize="13" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{StaticResource AccentPrimary}"/>
+                    </StackPanel>
+                </Button>
+            </StackPanel>
         </Grid>
         
-        <Grid Margin="0,8,0,0" Grid.Row="4" MinHeight="200">
-            <Border Background="#FF000000" Opacity="0.2" CornerRadius="8"/>
+        <Grid Margin="0,0,0,0" Grid.Row="3" MinHeight="200">
+            <Border Background="#FF000000" Opacity="0.2" CornerRadius="8" Margin="0"/>
             
             <ListView x:Name="AddedFilesList" 
                       ItemsSource="{Binding AddedFiles}" 
@@ -335,11 +375,25 @@
 
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="#3D0A1F" CornerRadius="6" Margin="0,4" Padding="12">
+                        <Border Background="{StaticResource BackgroundSecondary}" CornerRadius="8" Margin="0,8,0,8" Padding="20" UseLayoutRounding="True">
                             <Border.BorderBrush>
                                 <SolidColorBrush Color="#FF69B4" Opacity="0.3"/>
                             </Border.BorderBrush>
-                            <Border.BorderThickness>1</Border.BorderThickness>
+                            <Border.BorderThickness>1.5</Border.BorderThickness>
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#4D0A1F"/>
+                                            <Setter Property="BorderBrush">
+                                                <Setter.Value>
+                                                    <SolidColorBrush Color="#FF69B4" Opacity="0.5"/>
+                                                </Setter.Value>
+                                            </Setter>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
                             
                             <Grid>
                                 <Grid.RowDefinitions>
@@ -348,7 +402,7 @@
                                 </Grid.RowDefinitions>
                                 
                                 <!-- Header Row -->
-                                <Grid Grid.Row="0" Margin="0,0,0,8">
+                                <Grid Grid.Row="0" Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto"/> <!-- Icon -->
                                         <ColumnDefinition Width="*"/>    <!-- Title -->
@@ -359,17 +413,19 @@
                                     <!-- Valid Icon -->
                                     <Path Data="M 0 5 L 4 9 L 10 1" 
                                           Stroke="{StaticResource SuccessColor}" 
-                                          StrokeThickness="2" 
+                                          StrokeThickness="2.5" 
                                           VerticalAlignment="Center" 
-                                          Margin="0,0,8,0"/>
+                                          Margin="0,0,12,0"/>
                                           
                                     <!-- Title -->
                                     <TextBlock Grid.Column="1" 
                                                Text="{Binding FileName}" 
                                                Foreground="{StaticResource TextPrimary}" 
+                                               FontSize="14"
                                                FontWeight="SemiBold" 
                                                TextTrimming="CharacterEllipsis" 
                                                VerticalAlignment="Center"
+                                               Margin="0,0,12,0"
                                                ToolTip="{Binding FilePath}"/>
                                                
                                     <!-- Screen Selector -->
@@ -378,7 +434,7 @@
                                               SelectedItem="{Binding AssignedScreen}"
                                               Style="{StaticResource PinkComboBoxStyle}"
                                               Width="220"
-                                              Margin="8,0"/>
+                                              Margin="12,0"/>
                                               
                                     <!-- Remove Button -->
                                     <Button Grid.Column="3" 
@@ -401,7 +457,7 @@
                                     </Grid.ColumnDefinitions>
                                     
                                     <!-- Opacity -->
-                                    <TextBlock Text="Opacity" Foreground="{StaticResource TextTertiary}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Text="Opacity" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     <Slider Grid.Column="1" 
                                             Value="{Binding Opacity, Converter={StaticResource OpacityScaleConverter}}" 
                                             Minimum="0" Maximum="1" 
@@ -413,14 +469,14 @@
                                     <TextBlock Grid.Column="2" 
                                                Text="{Binding Opacity, Converter={StaticResource OpacityToIntConverter}}" 
                                                Foreground="{StaticResource TextPrimary}" 
-                                               FontSize="11"
-                                               FontWeight="Bold"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
                                                VerticalAlignment="Center" 
-                                               Margin="8,0,0,0" 
-                                               Width="30" TextAlignment="Right"/>
+                                               Margin="10,0,0,0" 
+                                               Width="35" TextAlignment="Right"/>
                                                
                                     <!-- Volume -->
-                                    <TextBlock Grid.Column="4" Text="Volume" Foreground="{StaticResource TextTertiary}" FontSize="11" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBlock Grid.Column="4" Text="Volume" Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                     <Slider Grid.Column="5" 
                                             Value="{Binding Volume}" 
                                             Minimum="0" Maximum="1" 
@@ -432,11 +488,11 @@
                                     <TextBlock Grid.Column="6" 
                                                Text="{Binding Volume, StringFormat=P0}" 
                                                Foreground="{StaticResource TextPrimary}" 
-                                               FontSize="11"
-                                               FontWeight="Bold"
+                                               FontSize="12"
+                                               FontWeight="SemiBold"
                                                VerticalAlignment="Center" 
-                                               Margin="8,0,0,0" 
-                                               Width="30" TextAlignment="Right"/>
+                                               Margin="10,0,0,0" 
+                                               Width="35" TextAlignment="Right"/>
                                 </Grid>
                             </Grid>
                         </Border>
@@ -462,84 +518,63 @@
                     </Style>
                 </Grid.Style>
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <Path Data="{StaticResource Icon_Folder}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="64" Height="64" Opacity="0.5" Margin="0,0,0,20"/>
+                    <Path Data="{StaticResource Icon_Folder}" Fill="{StaticResource AccentSecondary}" Stretch="Uniform" Width="72" Height="72" Opacity="0.4" Margin="0,0,0,24">
+                        <Path.Effect>
+                            <DropShadowEffect Color="#FF69B4" BlurRadius="12" ShadowDepth="0" Opacity="0.3"/>
+                        </Path.Effect>
+                    </Path>
                     <TextBlock Text="Drag &amp; Drop videos here" 
+                               Foreground="{StaticResource TextPrimary}" 
+                               HorizontalAlignment="Center" 
+                               TextAlignment="Center" 
+                               FontSize="18"
+                               FontWeight="SemiBold"
+                               Margin="0,0,0,8"/>
+                    <TextBlock Text="or click Browse to add files, or Add URL for online videos and playlists" 
                                Foreground="{StaticResource TextSecondary}" 
                                HorizontalAlignment="Center" 
                                TextAlignment="Center" 
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Margin="0,0,0,6"/>
-                    <TextBlock Text="or click Browse to add files, Add URL for online videos" 
-                               Foreground="{StaticResource TextTertiary}" 
-                               HorizontalAlignment="Center" 
-                               TextAlignment="Center" 
-                               FontSize="12"
-                               FontStyle="Italic"/>
+                               FontSize="13"
+                               FontStyle="Italic"
+                               Margin="0,0,0,0"/>
                 </StackPanel>
             </Grid>
         </Grid>
 
-        <Border Grid.Row="5" BorderBrush="#22FFFFFF" BorderThickness="0,1,0,0" Margin="10,0">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,5,8">
-                <Button Command="{Binding SavePlaylistCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="5,0" Height="38" Padding="15,0" ToolTip="Save current playlist to a file">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Data="{StaticResource Icon_Save}" Fill="White" Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0"/>
-                        <TextBlock Text="Save" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" Foreground="White"/>
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding LoadPlaylistCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="5,0" Height="38" Padding="15,0" ToolTip="Load a playlist from a file">
-                    <StackPanel Orientation="Horizontal">
-                         <Path Data="{StaticResource Icon_Folder}" Fill="White" Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0"/>
-                        <TextBlock Text="Load" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" Foreground="White"/>
-                    </StackPanel>
-                </Button>
-                <Button Command="{Binding ClearAllCommand}" Style="{StaticResource PrimaryButtonStyle}" Margin="5,0" Height="38" Padding="15,0" ToolTip="Remove all videos from playlist">
-                    <StackPanel Orientation="Horizontal">
-                         <Path Data="{StaticResource Icon_Trash}" Fill="White" Stretch="Uniform" Width="14" Height="14" Margin="0,0,8,0"/>
-                        <TextBlock Text="Clear" FontSize="13" FontWeight="Bold" VerticalAlignment="Center" Foreground="White"/>
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-        </Border>
-        
-        
-        
-
-        <!-- Status Message Area -->
+        <!-- Status Message Area - Hidden -->
         <Border x:Name="StatusBorder" 
                 Background="{Binding StatusMessageType, Converter={StaticResource StatusMessageTypeToBrushConverter}}" 
-                CornerRadius="6" 
-                Margin="10,8" 
-                Padding="12,8" 
+                CornerRadius="8" 
+                Margin="0,12,0,0" 
+                Padding="16,10" 
                 MinHeight="20" 
-                BorderThickness="1"
+                BorderThickness="1.5"
                 BorderBrush="{Binding StatusMessageType, Converter={StaticResource StatusMessageTypeToBrushConverter}}"
-                Visibility="{Binding StatusMessage, Converter={StaticResource StringToVisibilityConverter}}"
-                Grid.Row="6">
-            <Border.Effect>
-                <DropShadowEffect Color="#000000" BlurRadius="6" ShadowDepth="2" Opacity="0.2"/>
-            </Border.Effect>
+                Visibility="Collapsed"
+                HorizontalAlignment="Left"
+                Grid.Row="5">
             <TextBlock Text="{Binding StatusMessage}" 
                       Foreground="{Binding StatusMessageType, Converter={StaticResource StatusMessageTypeToForegroundConverter}}" 
-                      FontSize="13" 
-                      TextAlignment="Center"
+                      FontSize="12" 
+                      TextAlignment="Left"
                       TextWrapping="Wrap"
-                      FontWeight="SemiBold"/>
+                      FontWeight="SemiBold"
+                      LineHeight="1.4"/>
         </Border>
         
-        <Grid HorizontalAlignment="Center" Grid.Row="7">
+        <Grid HorizontalAlignment="Center" Grid.Row="6" Margin="0,8,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition/>
                 <ColumnDefinition/>
             </Grid.ColumnDefinitions>
-            <Label Style="{StaticResource LowerTitle}" FontSize="14" FontWeight="SemiBold">Random shuffle</Label>
+            <Label Style="{StaticResource LowerTitle}" FontSize="14" FontWeight="SemiBold" Margin="0,0,16,0">Shuffle</Label>
             <CheckBox x:Name="ShuffleCheckBox" IsChecked="{Binding Shuffle}" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" ToolTip="Randomize video playback order"></CheckBox>
         </Grid>
         <Button x:Name="TrainingToggleButton" 
                 Style="{StaticResource TrainingToggleButtonStyle}"
                 CommandParameter="{Binding ElementName=AddedFilesList, Path=SelectedItems}" 
-                Grid.Row="10">
+                Margin="0,20,0,0"
+                Grid.Row="9">
             <Button.Effect>
                 <DropShadowEffect Color="#FF69B4" BlurRadius="10" ShadowDepth="0" Opacity="0.4"/>
             </Button.Effect>
@@ -551,20 +586,23 @@
         </Button>
 
         <!-- Active Playback Controls -->
-        <StackPanel Grid.Row="8" Margin="0,5,0,10" Visibility="{Binding HasActivePlayers, Converter={StaticResource BooleanToVisibilityConverter}}">
-            <Label Style="{StaticResource LowerTitle}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5">Active Sessions</Label>
+        <StackPanel Grid.Row="7" Margin="0,16,0,0" Visibility="{Binding HasActivePlayers, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Label Style="{StaticResource LowerTitle}" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,5">Currently Playing</Label>
             <ItemsControl ItemsSource="{Binding ActivePlayers}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Margin="0,0,0,6" CornerRadius="6" BorderBrush="{StaticResource AccentPrimary}" BorderThickness="1" UseLayoutRounding="True" SnapsToDevicePixels="True">
+                        <Border Margin="0,0,0,8" CornerRadius="8" BorderBrush="{StaticResource AccentPrimary}" BorderThickness="1.5" UseLayoutRounding="True" SnapsToDevicePixels="True">
                             <Border.Background>
                                 <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="#0A0005" Offset="0"/>
-                                    <GradientStop Color="#000000" Offset="1"/>
+                                    <GradientStop Color="#1A0510" Offset="0"/>
+                                    <GradientStop Color="#0A0005" Offset="1"/>
                                 </LinearGradientBrush>
                             </Border.Background>
-                            <StackPanel Margin="12,8,12,12">
-                                <Grid Margin="0,0,0,10">
+                            <Border.Effect>
+                                <DropShadowEffect Color="#FF69B4" BlurRadius="8" ShadowDepth="0" Opacity="0.2"/>
+                            </Border.Effect>
+                            <StackPanel Margin="16,12,16,12">
+                                <Grid Margin="0,0,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="Auto"/>
@@ -575,11 +613,15 @@
 
                                     <Button Grid.Column="1" Command="{Binding TogglePlayPauseCommand}" 
                                             Style="{StaticResource ActivePlayerButtonStyle}" ToolTip="Play/Pause">
-                                         <Path Data="{StaticResource Icon_Play}" Fill="{StaticResource AccentPrimary}" Stretch="Uniform" Width="10" Height="10"/>
+                                        <Grid>
+                                            <Path Data="{StaticResource Icon_Play}" Fill="{StaticResource AccentPrimary}" Stretch="Uniform" Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
                                     </Button>
                                     <Button Grid.Column="2" Command="{Binding SkipCommand}" 
                                             Style="{StaticResource ActivePlayerButtonStyle}" ToolTip="Skip Video">
-                                         <Path Data="{StaticResource Icon_Next}" Fill="{StaticResource AccentPrimary}" Stretch="Uniform" Width="10" Height="10"/>
+                                        <Grid>
+                                            <Path Data="{StaticResource Icon_Next}" Fill="{StaticResource AccentPrimary}" Stretch="Uniform" Width="14" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Grid>
                                     </Button>
                                 </Grid>
                                 
@@ -592,7 +634,7 @@
 
 
             <!-- Busy Indicator Overlay -->
-            <Grid Grid.Row="0" Grid.RowSpan="12" Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" IsHitTestVisible="True" Panel.ZIndex="1000">
+            <Grid Grid.Row="0" Grid.RowSpan="11" Background="#80000000" Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}" IsHitTestVisible="True" Panel.ZIndex="1000">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                     <Grid Width="60" Height="60">
                        <Grid.Resources>
@@ -619,6 +661,8 @@
                     <TextBlock Text="Please wait..." Foreground="{StaticResource TextPrimary}" HorizontalAlignment="Center" Margin="0,15,0,0" FontSize="16" FontWeight="SemiBold"/>
                 </StackPanel>
             </Grid>
+            </Grid>
+        </Border>
         </Grid>
     </Border>
 

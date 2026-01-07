@@ -98,6 +98,7 @@ namespace TrainMeX.ViewModels {
         public ICommand BrowseCommand { get; }
         public ICommand AddUrlCommand { get; }
         public ICommand ImportPlaylistCommand { get; }
+        public ICommand AddUrlOrPlaylistCommand { get; }
         public ICommand RemoveSelectedCommand { get; }
         public ICommand ClearAllCommand { get; }
         public ICommand ExitCommand { get; }
@@ -122,6 +123,7 @@ namespace TrainMeX.ViewModels {
             BrowseCommand = new RelayCommand(Browse);
             AddUrlCommand = new RelayCommand(AddUrl);
             ImportPlaylistCommand = new RelayCommand(ImportPlaylist);
+            AddUrlOrPlaylistCommand = new RelayCommand(AddUrlOrPlaylist);
             RemoveSelectedCommand = new RelayCommand(RemoveSelected);
             RemoveItemCommand = new RelayCommand(RemoveItem);
             ClearAllCommand = new RelayCommand(ClearAll);
@@ -668,6 +670,115 @@ namespace TrainMeX.ViewModels {
             } catch (Exception ex) {
                 Logger.Error("Error importing playlist", ex);
                 SetStatusMessage($"Error importing playlist: {ex.Message}", StatusMessageType.Error);
+            } finally {
+                IsLoading = false;
+            }
+        }
+
+        private void AddUrlOrPlaylist(object obj) {
+            _ = AddUrlOrPlaylistAsync().ContinueWith(task => {
+                if (task.IsFaulted) {
+                    var ex = task.Exception?.GetBaseException() ?? task.Exception;
+                    Logger.Error("Error in AddUrlOrPlaylist operation", ex);
+                    Application.Current?.Dispatcher.InvokeAsync(() => {
+                        SetStatusMessage($"Error adding URL or playlist: {ex?.Message ?? "Unknown error"}", StatusMessageType.Error);
+                    });
+                }
+            }, TaskContinuationOptions.OnlyOnFaulted);
+        }
+
+        private async Task AddUrlOrPlaylistAsync() {
+            IsLoading = true;
+            SetStatusMessage("Enter video or playlist URL...", StatusMessageType.Info);
+
+            try {
+                // Show input dialog
+                var inputUrl = InputDialogWindow.ShowDialog(
+                    Application.Current.MainWindow, 
+                    "Add URL or Playlist", 
+                    "Video or Playlist URL:"
+                );
+                if (string.IsNullOrWhiteSpace(inputUrl)) {
+                    IsLoading = false;
+                    return;
+                }
+                var trimmedUrl = inputUrl.Trim();
+
+                // Validate URL
+                if (!FileValidator.IsValidUrl(trimmedUrl)) {
+                    SetStatusMessage("Invalid URL", StatusMessageType.Error);
+                    IsLoading = false;
+                    return;
+                }
+
+                // First, try to import as a playlist
+                SetStatusMessage("Checking if URL is a playlist...", StatusMessageType.Info);
+
+                int current = 0;
+                int total = 0;
+                var videoItems = await _playlistImporter.ImportPlaylistAsync(
+                    trimmedUrl,
+                    (c, t) => {
+                        current = c;
+                        total = t;
+                        Application.Current?.Dispatcher.InvokeAsync(() => {
+                            SetStatusMessage($"Importing playlist... {c} of {t} videos", StatusMessageType.Info);
+                        });
+                    },
+                    _cancellationTokenSource.Token
+                );
+
+                // If playlist import returned videos, add them all
+                if (videoItems != null && videoItems.Count > 0) {
+                    // Ensure screens are up to date
+                    if (AvailableScreens.Count == 0) RefreshScreens();
+                    var defaultScreen = GetDefaultScreen();
+
+                    // Check for duplicates and add items
+                    var existingPaths = new HashSet<string>(AddedFiles.Select(x => 
+                        x.IsUrl ? FileValidator.NormalizeUrl(x.FilePath) : x.FilePath), 
+                        StringComparer.OrdinalIgnoreCase);
+
+                    var settings = App.Settings;
+                    int addedCount = 0;
+                    int skippedCount = 0;
+
+                    foreach (var item in videoItems) {
+                        var normalizedUrl = item.IsUrl ? FileValidator.NormalizeUrl(item.FilePath) : item.FilePath;
+                        if (existingPaths.Contains(normalizedUrl)) {
+                            skippedCount++;
+                            continue;
+                        }
+
+                        item.AssignedScreen = defaultScreen;
+                        item.Opacity = settings.DefaultOpacity;
+                        item.Volume = settings.DefaultVolume;
+                        AddedFiles.Add(item);
+                        existingPaths.Add(normalizedUrl);
+
+                        addedCount++;
+                    }
+
+                    if (skippedCount > 0) {
+                        SetStatusMessage($"Added {addedCount} video(s) from playlist, skipped {skippedCount} duplicate(s)", StatusMessageType.Success);
+                    } else {
+                        SetStatusMessage($"Added {addedCount} video(s) from playlist", StatusMessageType.Success);
+                    }
+
+                    UpdateButtons();
+                    SaveSession();
+                    IsLoading = false;
+                    return;
+                }
+
+                // If no videos found in playlist, treat as single video URL
+                SetStatusMessage("No playlist found, treating as single video URL...", StatusMessageType.Info);
+                await ProcessUrlAsync(trimmedUrl);
+            } catch (OperationCanceledException) {
+                SetStatusMessage("Operation cancelled", StatusMessageType.Warning);
+            } catch (Exception ex) {
+                Logger.Error("Error in AddUrlOrPlaylistAsync", ex);
+                SetStatusMessage($"Error adding URL or playlist: {ex.Message}", StatusMessageType.Error);
             } finally {
                 IsLoading = false;
             }

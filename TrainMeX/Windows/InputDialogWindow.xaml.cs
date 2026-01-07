@@ -38,9 +38,21 @@ namespace TrainMeX.Windows {
             // Focus the TextBox and select all text if there's an initial value
             InputTextBox.Focus();
             // Ensure text is visible by setting foreground explicitly
-            InputTextBox.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.Black);
+            InputTextBox.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Colors.White);
             if (!string.IsNullOrEmpty(InputText)) {
                 InputTextBox.SelectAll();
+            }
+            // Initialize the clip geometry
+            UpdateMainBorderClip();
+        }
+
+        private void MainBorder_SizeChanged(object sender, SizeChangedEventArgs e) {
+            UpdateMainBorderClip();
+        }
+
+        private void UpdateMainBorderClip() {
+            if (MainBorderClip != null && MainBorder != null) {
+                MainBorderClip.Rect = new Rect(0, 0, MainBorder.ActualWidth, MainBorder.ActualHeight);
             }
         }
 

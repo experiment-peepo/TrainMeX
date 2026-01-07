@@ -173,10 +173,10 @@
             </Grid.RowDefinitions>
 
             <!-- Header with modernized title and subtitle -->
-            <Grid Grid.Row="0" Margin="20,20,20,10" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
+            <Grid Grid.Row="0" Margin="20,24,20,0" MouseLeftButtonDown="Grid_MouseLeftButtonDown">
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock Text="Settings" Style="{StaticResource WindowHeaderTitleStyle}"/>
-                    <TextBlock Text="Configure your TrainMeX preferences and playback options" Style="{StaticResource WindowHeaderSubtitleStyle}"/>
+                    <TextBlock Text="Manage playback settings, display preferences, and application options" Style="{StaticResource WindowHeaderSubtitleStyle}"/>
                 </StackPanel>
                 <Button Style="{StaticResource ControlButton}" 
                         Click="CloseButton_Click" 
@@ -186,11 +186,11 @@
                         Width="30" Height="30"
                         Background="Transparent"
                         Foreground="{StaticResource TextSecondary}">
-                    <Path Data="{StaticResource Icon_Close}" Fill="{StaticResource TextSecondary}" Stretch="Uniform" Width="12" Height="12"/>
+                    <Path Data="{StaticResource Icon_Close}" Stretch="Uniform" Width="12" Height="12"/>
                 </Button>
             </Grid>
 
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="10,10,10,0" Padding="0,0,10,0">
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="24,20,24,0" Padding="0,0,10,0">
                 <StackPanel>
                     <!-- General Settings -->
                     <Expander Header="General" Style="{StaticResource SettingsExpanderStyle}" IsExpanded="{Binding IsGeneralExpanded}">
@@ -226,37 +226,37 @@
                             </Grid.RowDefinitions>
  
                             <!-- Default Opacity -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
-                                <Label Content="Default Opacity" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Initial opacity level for new videos" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,16,20" VerticalAlignment="Center">
+                                <Label Content="Default Opacity" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Initial opacity level for new videos" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,15">
-                                <Slider Width="120" Value="{Binding DefaultOpacity, Converter={StaticResource OpacityScaleConverter}}"
+                            <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,20">
+                                <Slider Width="140" Value="{Binding DefaultOpacity, Converter={StaticResource OpacityScaleConverter}}"
                                         Minimum="0" Maximum="1.0" SmallChange="0.1" LargeChange="0.1" TickFrequency="0.1"
                                         TickPlacement="BottomRight"
                                         Style="{StaticResource NeonSliderStyle}" IsSnapToTickEnabled="True"/>
-                                <TextBlock Text="{Binding DefaultOpacity, Converter={StaticResource OpacityToIntConverter}}" 
-                                           Foreground="{StaticResource TextSecondary}" FontSize="12" Width="30" TextAlignment="Right" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                <TextBlock Text="{Binding DefaultOpacity, Converter={StaticResource OpacityToIntConverter}}"
+                                           Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" Width="35" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
  
                             <!-- Default Volume -->
-                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
-                                <Label Content="Default Volume" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Initial volume level for new videos" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,16,20" VerticalAlignment="Center">
+                                <Label Content="Default Volume" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Initial volume level for new videos" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
-                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,15">
-                                <Slider Width="120" Value="{Binding DefaultVolume}"
+                            <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,20">
+                                <Slider Width="140" Value="{Binding DefaultVolume}"
                                         Minimum="0" Maximum="1" SmallChange="0.1" LargeChange="0.1" TickFrequency="0.1"
                                         TickPlacement="BottomRight"
                                         Style="{StaticResource NeonSliderStyle}" IsSnapToTickEnabled="True"/>
                                 <TextBlock Text="{Binding DefaultVolume, StringFormat='{}{0:P0}'}" 
-                                           Foreground="{StaticResource TextSecondary}" FontSize="12" Width="30" TextAlignment="Right" VerticalAlignment="Center" Margin="5,0,0,0"/>
+                                           Foreground="{StaticResource TextSecondary}" FontSize="12" FontWeight="SemiBold" Width="35" TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,0,0"/>
                             </StackPanel>
  
                             <!-- Opaque Mode -->
-                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <Label Content="Opaque Mode" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Force videos to be fully opaque" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <Label Content="Opaque Mode" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Disable transparency for all videos" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
                             <CheckBox Grid.Row="2" Grid.Column="1" 
                                       IsChecked="{Binding AlwaysOpaque}"
@@ -279,31 +279,31 @@
                             </Grid.RowDefinitions>
  
                             <!-- Always on Top -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
-                                <Label Content="Always on Top (Launcher)" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Keep the launcher window above others" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,16,20" VerticalAlignment="Center">
+                                <Label Content="Always on Top (Launcher)" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Keep the launcher window above others" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
                             <CheckBox Grid.Row="0" Grid.Column="1" 
                                       IsChecked="{Binding LauncherAlwaysOnTop}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"
-                                      Margin="0,0,0,15"/>
+                                      Margin="0,0,0,20"/>
                             
                             <!-- HotScreen Integration -->
-                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
-                                <Label Content="HotScreen Integration" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Sync window positions for accurate censoring" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,16,20" VerticalAlignment="Center">
+                                <Label Content="HotScreen Integration" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Sync window positions for accurate censoring" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
                             <CheckBox Grid.Row="1" Grid.Column="1" 
                                       IsChecked="{Binding EnableHotScreenIntegration}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"
-                                      Margin="0,0,0,15"/>
+                                      Margin="0,0,0,20"/>
                             
                             <!-- Calibration Button -->
-                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,10,0" VerticalAlignment="Center">
-                                <Label Content="HotScreen Calibration" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Show calibration pattern for auto-alignment" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <Label Content="HotScreen Calibration" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Show calibration pattern for auto-alignment" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
                             <Button Grid.Row="2" Grid.Column="1"
                                     Content="Show Calibration Pattern"
@@ -321,9 +321,9 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Margin="0,0,0,10">
-                                <Label Content="Panic Hotkey" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Global hotkey to stop all playback immediately" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="0" Margin="0,0,0,16">
+                                <Label Content="Panic Hotkey" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Global hotkey to stop all playback immediately" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
                             <Grid Grid.Row="1">
                                 <Grid.ColumnDefinitions>
@@ -356,26 +356,26 @@
                             </Grid.RowDefinitions>
  
                             <!-- Remember Last Playlist -->
-                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
-                                <Label Content="Remember last playlist" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Restore your list when reopening the app" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,16,20" VerticalAlignment="Center">
+                                <Label Content="Remember last playlist" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Automatically load your last playlist on startup" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
                             <CheckBox Grid.Row="0" Grid.Column="1" 
                                       IsChecked="{Binding RememberLastPlaylist}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"
-                                      Margin="0,0,0,15"/>
+                                      Margin="0,0,0,20"/>
  
                             <!-- Remember File Position -->
-                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,10,15" VerticalAlignment="Center">
-                                <Label Content="Remember file position" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0"/>
-                                <TextBlock Text="Resume videos from where you left off" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,2,0,0"/>
+                            <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,0,16,20" VerticalAlignment="Center">
+                                <Label Content="Remember file position" Foreground="{StaticResource TextPrimary}" FontSize="13" Padding="0" FontWeight="SemiBold"/>
+                                <TextBlock Text="Resume videos from where you left off" Foreground="{StaticResource TextTertiary}" FontSize="11" Margin="0,4,0,0"/>
                             </StackPanel>
                             <CheckBox Grid.Row="1" Grid.Column="1" 
                                       IsChecked="{Binding RememberFilePosition}"
                                       Style="{StaticResource ModernCheckBoxStyle}"
                                       VerticalAlignment="Center"
-                                      Margin="0,0,0,15"/>
+                                      Margin="0,0,0,20"/>
  
                             <!-- Reset Positions Button -->
                             <Button Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
@@ -394,7 +394,7 @@
             </ScrollViewer>
 
             <!-- Fixed Footer with Buttons -->
-            <Grid Grid.Row="2" Margin="20,12,20,20">
+            <Grid Grid.Row="2" Margin="24,20,24,24">
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                     <Button Command="{Binding CancelCommand}" 
                             Style="{StaticResource SecondaryButtonStyle}" 
@@ -417,8 +417,6 @@
                     </Button>
                 </StackPanel>
             </Grid>
-
-
-    </Grid>
+        </Grid>
     </Border>
 </Window>

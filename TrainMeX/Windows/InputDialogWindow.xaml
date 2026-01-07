@@ -27,8 +27,12 @@
             Background="{StaticResource BackgroundPrimary}" 
             BorderBrush="{StaticResource AccentPrimary}" 
             BorderThickness="1"
-            CornerRadius="8">
-        <Grid Background="{StaticResource BackgroundPrimary}">
+            CornerRadius="8"
+            SizeChanged="MainBorder_SizeChanged">
+        <Border.Clip>
+            <RectangleGeometry x:Name="MainBorderClip" RadiusX="8" RadiusY="8"/>
+        </Border.Clip>
+        <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="50"/>
                 <RowDefinition Height="Auto"/>
@@ -52,7 +56,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="15,0,0,0">
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="20,0,0,0">
                         <Image Source="pack://application:,,,/Images/icon.ico" Width="20" Height="20" Margin="0,0,10,0">
                             <Image.Effect>
                                 <DropShadowEffect Color="#FF69B4" BlurRadius="8" ShadowDepth="0" Opacity="0.5"/>
@@ -64,42 +68,44 @@
                     <Button Grid.Column="2" Style="{StaticResource ControlButton}" 
                             Click="CancelButton_Click" 
                             Width="50" Height="50" 
-                            Background="#FF69B4"
+                            Background="Transparent"
                             Foreground="White"
                             BorderThickness="0"
                             ToolTip="Cancel">
-                        <Button.Resources>
-                            <Style TargetType="Border">
-                                <Setter Property="CornerRadius" Value="0,8,0,0"/>
-                            </Style>
-                        </Button.Resources>
-                        <Path Data="{StaticResource Icon_Close}" Fill="White" Stretch="Uniform" Width="14" Height="14"/>
+                        <Path Data="{StaticResource Icon_Close}" Stretch="Uniform" Width="14" Height="14"/>
                     </Button>
                 </Grid>
             </Border>
             
             <!-- Content Area -->
-            <StackPanel Margin="20" Grid.Row="1">
+            <StackPanel Margin="24,24,24,20" Grid.Row="1">
                 <Label Content="{Binding LabelText}" 
                        Foreground="{StaticResource TextPrimary}" 
-                       FontWeight="Bold" 
-                       FontSize="14"
+                       FontWeight="SemiBold" 
+                       FontSize="15"
                        HorizontalAlignment="Center"
-                       Margin="0,0,0,15"/>
+                       Margin="0,0,0,20"/>
                 <TextBox x:Name="InputTextBox"
                          Style="{StaticResource PinkTextBoxStyle}"
                          Text="{Binding InputText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Height="50"
+                         Height="42"
                          VerticalContentAlignment="Center"
-                         Margin="0,0,0,5"
+                         Margin="0,0,0,12"
                          KeyDown="InputTextBox_KeyDown"
                          ToolTip="Enter video filename or URL"/>
+                <TextBlock Text="Supported: Hypnotube, PMVHaven, RULE34Video"
+                           Foreground="{StaticResource TextSecondary}"
+                           FontSize="11"
+                           FontStyle="Italic"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,0"
+                           TextAlignment="Center"/>
             </StackPanel>
             
             <!-- Buttons -->
             <StackPanel Orientation="Horizontal" 
                        HorizontalAlignment="Right" 
-                       Margin="20,0,20,20" 
+                       Margin="24,0,24,24" 
                        Grid.Row="2">
                 <Button x:Name="OkButton" 
                         Click="OkButton_Click"
