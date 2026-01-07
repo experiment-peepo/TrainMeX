@@ -27,40 +27,40 @@
                 <Setter Property="FontFamily" Value="Inter, Segoe UI, Roboto, Helvetica, Arial, sans-serif"/>
             </Style>
             <!-- Color Resources - Deep Magenta & Midnight Palette -->
-            <SolidColorBrush x:Key="BackgroundPrimary" Color="#1A0510"/> <!-- Very Dark Pink (Main BG) -->
-            <SolidColorBrush x:Key="BackgroundSecondary" Color="#3D0A1F"/> <!-- Deep Rose (Cards/Panels) -->
-            <SolidColorBrush x:Key="BackgroundHeader" Color="#3D0A1F"/> <!-- Deep Rose (Header) -->
-            <SolidColorBrush x:Key="AccentPrimary" Color="#FF1493"/> <!-- Hot Pink (Primary) -->
-            <SolidColorBrush x:Key="AccentSecondary" Color="#FF69B4"/> <!-- Bright Fuchsia (Secondary/Active) -->
-            <SolidColorBrush x:Key="AccentHover" Color="#FF69B4"/> <!-- Bright Fuchsia (Hover) -->
-            <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/> <!-- White -->
-            <SolidColorBrush x:Key="TextSecondary" Color="#FFB6D9"/> <!-- Light Pink -->
-            <SolidColorBrush x:Key="TextTertiary" Color="#EDAEC0"/> <!-- Slightly darker Light Pink -->
-            <SolidColorBrush x:Key="BorderPink" Color="#FF1493"/> <!-- Hot Pink -->
-            <SolidColorBrush x:Key="ScrollbarThumb" Color="#44FF1493"/> <!-- Translucent Hot Pink -->
-            <SolidColorBrush x:Key="ScrollbarThumbHover" Color="#AAFF1493"/> <!-- Brighter Hot Pink -->
-            <SolidColorBrush x:Key="SuccessColor" Color="#90EE90"/>
-            <SolidColorBrush x:Key="WarningColor" Color="#FFD700"/>
-            <SolidColorBrush x:Key="ErrorColor" Color="#FF4444"/> <!-- Bright Red for error -->
+            <SolidColorBrush x:Key="BackgroundPrimary" Color="#0D0221"/> <!-- Deep Purple Black -->
+            <SolidColorBrush x:Key="BackgroundSecondary" Color="#1A0B2E"/> <!-- Rich Purple -->
+            <SolidColorBrush x:Key="BackgroundHeader" Color="#16213E"/> <!-- Dark Blue Purple -->
+            <SolidColorBrush x:Key="AccentPrimary" Color="#FF006E"/> <!-- Vibrant Magenta -->
+            <SolidColorBrush x:Key="AccentSecondary" Color="#FF1493"/> <!-- Hot Pink -->
+            <SolidColorBrush x:Key="AccentHover" Color="#FF69B4"/> <!-- Bright Pink -->
+            <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/> <!-- Pure White -->
+            <SolidColorBrush x:Key="TextSecondary" Color="#FFD6F0"/> <!-- Light Pink -->
+            <SolidColorBrush x:Key="TextTertiary" Color="#FFC9E3"/> <!-- Soft Pink -->
+            <SolidColorBrush x:Key="BorderPink" Color="#FF006E"/> <!-- Vibrant Magenta -->
+            <SolidColorBrush x:Key="ScrollbarThumb" Color="#55FF006E"/> <!-- Translucent Magenta -->
+            <SolidColorBrush x:Key="ScrollbarThumbHover" Color="#AAFF006E"/> <!-- Bright Magenta -->
+            <SolidColorBrush x:Key="SuccessColor" Color="#00F5A0"/> <!-- Neon Green -->
+            <SolidColorBrush x:Key="WarningColor" Color="#FFB800"/> <!-- Vibrant Gold -->
+            <SolidColorBrush x:Key="ErrorColor" Color="#FF0055"/> <!-- Neon Red -->
 
-            <!-- Spacing System (4px base unit) -->
+            <!-- Spacing System (8px base unit) -->
             <sys:Double x:Key="SpacingXSmall">4</sys:Double>
             <sys:Double x:Key="SpacingSmall">8</sys:Double>
-            <sys:Double x:Key="SpacingMedium">12</sys:Double>
-            <sys:Double x:Key="SpacingBase">16</sys:Double>
-            <sys:Double x:Key="SpacingLarge">20</sys:Double>
-            <sys:Double x:Key="SpacingXLarge">24</sys:Double>
-            <sys:Double x:Key="SpacingXXLarge">32</sys:Double>
-            <sys:Double x:Key="SpacingXXXLarge">40</sys:Double>
+            <sys:Double x:Key="SpacingMedium">16</sys:Double>
+            <sys:Double x:Key="SpacingBase">24</sys:Double>
+            <sys:Double x:Key="SpacingLarge">32</sys:Double>
+            <sys:Double x:Key="SpacingXLarge">48</sys:Double>
+            <sys:Double x:Key="SpacingXXLarge">64</sys:Double>
+            <sys:Double x:Key="SpacingXXXLarge">80</sys:Double>
             
             <!-- Standard Control Dimensions -->
-            <sys:Double x:Key="ButtonHeight">38</sys:Double>
-            <sys:Double x:Key="InputHeight">32</sys:Double>
-            <sys:Double x:Key="IconButtonSize">32</sys:Double>
-            <Thickness x:Key="ButtonPadding">16,10</Thickness>
-            <Thickness x:Key="PanelPadding">20</Thickness>
-            <Thickness x:Key="SectionMargin">0,0,0,20</Thickness>
-            <Thickness x:Key="ItemMargin">0,0,0,12</Thickness>
+            <sys:Double x:Key="ButtonHeight">40</sys:Double>
+            <sys:Double x:Key="InputHeight">40</sys:Double>
+            <sys:Double x:Key="IconButtonSize">40</sys:Double>
+            <Thickness x:Key="ButtonPadding">24,0</Thickness>
+            <Thickness x:Key="PanelPadding">32</Thickness>
+            <Thickness x:Key="SectionMargin">0,0,0,32</Thickness>
+            <Thickness x:Key="ItemMargin">0,0,0,16</Thickness>
 
             <!-- Vector Icons (Path Geometries) -->
             <!-- Application Icons -->
@@ -99,14 +99,14 @@
             </Storyboard>
             
             <Style TargetType="Label" x:Key="MainTitle">
-                <Setter Property="FontFamily" Value="Montserrat, Segoe UI, sans-serif"/>
-                <Setter Property="Foreground" Value="{StaticResource AccentPrimary}"/>
+                <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI, sans-serif"/>
+                <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                 <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                <Setter Property="FontSize" Value="32"/>
-                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="FontSize" Value="42"/>
+                <Setter Property="FontWeight" Value="Black"/>
                 <Setter Property="Effect">
                     <Setter.Value>
-                        <DropShadowEffect Color="#FF69B4" BlurRadius="10" ShadowDepth="0" Opacity="0.5"/>
+                        <DropShadowEffect Color="#FF006E" BlurRadius="20" ShadowDepth="0" Opacity="0.3"/>
                     </Setter.Value>
                 </Setter>
             </Style>
@@ -139,8 +139,8 @@
             </Style>
             <Style TargetType="Button" x:Key="MainButton">
                 <Setter Property="BorderThickness" Value="0"/>
-                <Setter Property="Padding" Value="16,0"/>
-                <Setter Property="Height" Value="38"/> <!-- Standardized Height -->
+                <Setter Property="Padding" Value="20,0"/>
+                <Setter Property="Height" Value="44"/>
                 <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
                 <Setter Property="Background" Value="{StaticResource AccentPrimary}"/>
                 <Setter Property="Margin" Value="0,1,0,0"/>
@@ -150,7 +150,7 @@
                         <ControlTemplate TargetType="Button">
                             <Border x:Name="border"
                                     Background="{TemplateBinding Background}" 
-                                    CornerRadius="8" 
+                                    CornerRadius="10" 
                                     Padding="{TemplateBinding Padding}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
                                     BorderBrush="{TemplateBinding BorderBrush}">
@@ -222,15 +222,14 @@
             
             <!-- Secondary Button Style -->
             <Style x:Key="SecondaryButtonStyle" TargetType="Button" BasedOn="{StaticResource MainButton}">
-                <Setter Property="Background" Value="{StaticResource BackgroundSecondary}"/>
+                <Setter Property="Background" Value="Transparent"/>
                 <Setter Property="BorderBrush" Value="{StaticResource AccentPrimary}"/>
-                <Setter Property="BorderThickness" Value="1.5"/>
+                <Setter Property="BorderThickness" Value="1"/>
                 <Setter Property="Foreground" Value="{StaticResource AccentPrimary}"/>
                 <Style.Triggers>
                     <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Background" Value="#3D0A1F"/>
-                        <Setter Property="BorderBrush" Value="{StaticResource AccentSecondary}"/>
-                        <Setter Property="Foreground" Value="{StaticResource AccentSecondary}"/>
+                        <Setter Property="Background" Value="#22FF006E"/>
+                        <Setter Property="BorderBrush" Value="{StaticResource AccentHover}"/>
                     </Trigger>
                 </Style.Triggers>
             </Style>
@@ -281,12 +280,8 @@
 
             <!-- Modern Premium CheckBox Style -->
             <Style x:Key="ModernCheckBoxStyle" TargetType="CheckBox">
-                <Setter Property="FontFamily" Value="Segoe UI"/>
-                <Setter Property="FontSize" Value="13"/>
-                <Setter Property="Foreground" Value="White"/>
-                <Setter Property="Background" Value="#2D2D30"/>
-                <Setter Property="Padding" Value="8,5"/>
-                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Width" Value="24"/>
+                <Setter Property="Height" Value="24"/>
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="CheckBox">
@@ -319,7 +314,8 @@
                                 <!-- Label Text -->
                                 <ContentPresenter Grid.Column="1"
                                                  VerticalAlignment="Center"
-                                                 Content="{TemplateBinding Content}"/>
+                                                 Content="{TemplateBinding Content}"
+                                                 Margin="0,0,0,0"/>
                             </Grid>
 
                             <ControlTemplate.Triggers>

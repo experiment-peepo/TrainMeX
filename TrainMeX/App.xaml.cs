@@ -22,6 +22,10 @@ namespace TrainMeX {
         public static Classes.HotkeyService Hotkeys => Classes.ServiceContainer.TryGet<Classes.HotkeyService>(out var hotkeys) ? hotkeys : null;
         public static Classes.UrlCacheService UrlCache => Classes.ServiceContainer.TryGet<Classes.UrlCacheService>(out var urlCache) ? urlCache : null;
         public static Classes.TelemetryService Telemetry => Classes.ServiceContainer.TryGet<Classes.TelemetryService>(out var telemetry) ? telemetry : null;
+        
+        public App() {
+            InitializeComponent();
+        }
 
         protected override void OnStartup(StartupEventArgs e) {
             
