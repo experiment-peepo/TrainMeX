@@ -252,10 +252,19 @@ namespace TrainMeX.Windows {
                 VideoItem targetItem = listViewItem?.DataContext as VideoItem;
 
                 if (sourceItem != null && targetItem != null && sourceItem != targetItem) {
+                    // Reorder in ViewModel
+                    int oldIndex = ViewModel.AddedFiles.IndexOf(sourceItem);
                     int newIndex = ViewModel.AddedFiles.IndexOf(targetItem);
-                    if (newIndex >= 0) {
-                        ViewModel.MoveVideoItem(sourceItem, newIndex);
+                    
+                    if (oldIndex >= 0 && newIndex >= 0) {
+                        ViewModel.AddedFiles.Move(oldIndex, newIndex);
                     }
+                } else if (sourceItem != null && targetItem == null) {
+                    // Dropped in empty space (e.g. at the end), add to end? 
+                    // Or just ignore. Usually reordering expects dropping ON an item or using insertion adorner.
+                    // For simple list reorder, dropping 'nowhere' often means 'end of list', 
+                    // but Move requires an index. If dropped on empty space, we could move to end.
+                    ViewModel.AddedFiles.Move(ViewModel.AddedFiles.IndexOf(sourceItem), ViewModel.AddedFiles.Count - 1);
                 }
             }
         }
@@ -478,7 +487,7 @@ public static readonly StatusMessageTypeToForegroundConverter Instance = new Sta
                 // Scale 0-0.90 opacity range to 0-100 display range
                 return ((int)Math.Round((opacity / MaxOpacity) * 100)).ToString();
             }
-            return "0";
+            return "100";
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {
@@ -494,7 +503,7 @@ public static readonly StatusMessageTypeToForegroundConverter Instance = new Sta
             if (value is double opacity) {
                 return opacity / MaxOpacity;
             }
-            return 0.0;
+            return 1.0;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) {

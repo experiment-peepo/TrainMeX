@@ -234,8 +234,6 @@ namespace TrainMeX.Classes {
             foreach (var w in playersCopy) {
                 try {
                     // Critical: Close should be on UI thread or at least handle it safely
-                    // WPF Window.Close() is supposed to be thread-safe for simple cases but usually better on UI thread.
-                    // HypnoWindow handles its own disposal.
                     if (System.Windows.Application.Current?.Dispatcher.CheckAccess() == true) {
                         w.Close();
                     } else {
@@ -250,6 +248,30 @@ namespace TrainMeX.Classes {
                 }
             }
             _masterSyncTimer.Stop();
+        }
+
+        /// <summary>
+        /// Unregisters a single player when it's closed or failed
+        /// </summary>
+        internal void UnregisterPlayer(HypnoWindow player) {
+            if (player == null) return;
+
+            lock (_playersLock) {
+                if (players.Remove(player)) {
+                    Logger.Info($"[VideoPlayerService] Unregistered player for screen: {player.ScreenDeviceName}");
+                }
+                
+                // Find and remove from ActivePlayers collection
+                var vm = ActivePlayers.FirstOrDefault(ap => ap.Player == player.ViewModel);
+                if (vm != null) {
+                    ActivePlayers.Remove(vm);
+                }
+
+                if (players.Count == 0) {
+                    _masterSyncTimer.Stop();
+                    Logger.Info("[VideoPlayerService] Last player removed, stopped sync timer.");
+                }
+            }
         }
 
 

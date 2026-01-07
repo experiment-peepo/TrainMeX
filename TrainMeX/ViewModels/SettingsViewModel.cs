@@ -25,6 +25,73 @@ namespace TrainMeX.ViewModels {
 
         private bool _rememberLastPlaylist;
         private bool _rememberFilePosition;
+        private bool _enableHotScreenIntegration;
+        private int _hotScreenOffsetX;
+        private int _hotScreenOffsetY;
+        private bool _hotScreenUseClientArea;
+        private bool _isGeneralExpanded;
+        private bool _isPlaybackExpanded;
+        private bool _isApplicationExpanded;
+        private bool _isHotkeysExpanded;
+        private bool _isHistoryExpanded;
+
+        public bool IsGeneralExpanded {
+            get => _isGeneralExpanded;
+            set {
+                if (SetProperty(ref _isGeneralExpanded, value) && value) {
+                    CollapseOthers(nameof(IsGeneralExpanded));
+                    App.Settings.LastExpandedSection = nameof(IsGeneralExpanded);
+                }
+            }
+        }
+
+        public bool IsPlaybackExpanded {
+            get => _isPlaybackExpanded;
+            set {
+                if (SetProperty(ref _isPlaybackExpanded, value) && value) {
+                    CollapseOthers(nameof(IsPlaybackExpanded));
+                    App.Settings.LastExpandedSection = nameof(IsPlaybackExpanded);
+                }
+            }
+        }
+
+        public bool IsApplicationExpanded {
+            get => _isApplicationExpanded;
+            set {
+                if (SetProperty(ref _isApplicationExpanded, value) && value) {
+                    CollapseOthers(nameof(IsApplicationExpanded));
+                    App.Settings.LastExpandedSection = nameof(IsApplicationExpanded);
+                }
+            }
+        }
+
+        public bool IsHotkeysExpanded {
+            get => _isHotkeysExpanded;
+            set {
+                if (SetProperty(ref _isHotkeysExpanded, value) && value) {
+                    CollapseOthers(nameof(IsHotkeysExpanded));
+                    App.Settings.LastExpandedSection = nameof(IsHotkeysExpanded);
+                }
+            }
+        }
+
+        public bool IsHistoryExpanded {
+            get => _isHistoryExpanded;
+            set {
+                if (SetProperty(ref _isHistoryExpanded, value) && value) {
+                    CollapseOthers(nameof(IsHistoryExpanded));
+                    App.Settings.LastExpandedSection = nameof(IsHistoryExpanded);
+                }
+            }
+        }
+
+        private void CollapseOthers(string current) {
+            if (current != nameof(IsGeneralExpanded)) IsGeneralExpanded = false;
+            if (current != nameof(IsPlaybackExpanded)) IsPlaybackExpanded = false;
+            if (current != nameof(IsApplicationExpanded)) IsApplicationExpanded = false;
+            if (current != nameof(IsHotkeysExpanded)) IsHotkeysExpanded = false;
+            if (current != nameof(IsHistoryExpanded)) IsHistoryExpanded = false;
+        }
 
         // Taboo Settings
 
@@ -52,6 +119,24 @@ namespace TrainMeX.ViewModels {
 
             _rememberLastPlaylist = settings.RememberLastPlaylist;
             _rememberFilePosition = settings.RememberFilePosition;
+            _enableHotScreenIntegration = settings.EnableHotScreenIntegration;
+            _hotScreenOffsetX = settings.HotScreenOffsetX;
+            _hotScreenOffsetY = settings.HotScreenOffsetY;
+            _hotScreenUseClientArea = settings.HotScreenUseClientArea;
+
+            
+            // Load and set the last expanded section
+            var lastSection = settings.LastExpandedSection ?? nameof(IsGeneralExpanded);
+            _isGeneralExpanded = lastSection == nameof(IsGeneralExpanded);
+            _isPlaybackExpanded = lastSection == nameof(IsPlaybackExpanded);
+            _isApplicationExpanded = lastSection == nameof(IsApplicationExpanded);
+            _isHotkeysExpanded = lastSection == nameof(IsHotkeysExpanded);
+            _isHistoryExpanded = lastSection == nameof(IsHistoryExpanded);
+
+            // Ensure at least one is expanded if the loaded value was invalid
+            if (!_isGeneralExpanded && !_isPlaybackExpanded && !_isApplicationExpanded && !_isHotkeysExpanded && !_isHistoryExpanded) {
+                _isGeneralExpanded = true;
+            }
 
 
 
@@ -188,6 +273,25 @@ namespace TrainMeX.ViewModels {
             set => SetProperty(ref _rememberFilePosition, value);
         }
 
+        public bool EnableHotScreenIntegration {
+            get => _enableHotScreenIntegration;
+            set => SetProperty(ref _enableHotScreenIntegration, value);
+        }
+
+        public int HotScreenOffsetX {
+            get => _hotScreenOffsetX;
+            set => SetProperty(ref _hotScreenOffsetX, value);
+        }
+
+        public int HotScreenOffsetY {
+            get => _hotScreenOffsetY;
+            set => SetProperty(ref _hotScreenOffsetY, value);
+        }
+
+        public bool HotScreenUseClientArea {
+            get => _hotScreenUseClientArea;
+            set => SetProperty(ref _hotScreenUseClientArea, value);
+        }
 
             
         public ICommand OkCommand { get; }
@@ -219,6 +323,17 @@ namespace TrainMeX.ViewModels {
 
             settings.RememberLastPlaylist = RememberLastPlaylist;
             settings.RememberFilePosition = RememberFilePosition;
+            settings.EnableHotScreenIntegration = EnableHotScreenIntegration;
+            settings.HotScreenOffsetX = HotScreenOffsetX;
+            settings.HotScreenOffsetY = HotScreenOffsetY;
+            settings.HotScreenUseClientArea = HotScreenUseClientArea;
+            
+            // Save currently expanded section
+            if (IsGeneralExpanded) settings.LastExpandedSection = nameof(IsGeneralExpanded);
+            else if (IsPlaybackExpanded) settings.LastExpandedSection = nameof(IsPlaybackExpanded);
+            else if (IsApplicationExpanded) settings.LastExpandedSection = nameof(IsApplicationExpanded);
+            else if (IsHotkeysExpanded) settings.LastExpandedSection = nameof(IsHotkeysExpanded);
+            else if (IsHistoryExpanded) settings.LastExpandedSection = nameof(IsHistoryExpanded);
             
             settings.Save();
 

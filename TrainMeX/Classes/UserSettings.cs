@@ -25,6 +25,15 @@ namespace TrainMeX.Classes {
         public bool RememberFilePosition { get; set; } = true;
         public System.Collections.Generic.List<string> PlayedHistory { get; set; } = new System.Collections.Generic.List<string>();
         public bool VideoShuffle { get; set; } = true;
+        
+        // HotScreen Integration
+        public bool EnableHotScreenIntegration { get; set; } = true;
+        public int HotScreenOffsetX { get; set; } = 0;
+        public int HotScreenOffsetY { get; set; } = 0;
+        public bool HotScreenUseClientArea { get; set; } = true;
+
+        // UI State
+        public string LastExpandedSection { get; set; } = "IsGeneralExpanded";
 
 
         private static string _settingsPath;
@@ -40,6 +49,7 @@ namespace TrainMeX.Classes {
                 }
                 return _settingsPath;
             }
+            internal set => _settingsPath = value;
         }
 
         public static UserSettings Load() {

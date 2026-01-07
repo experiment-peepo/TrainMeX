@@ -62,9 +62,10 @@ namespace TrainMeX.ViewModels {
             }
         }
 
-        // Cubic volume scaling + 50% Global Cap
-        // 100% UI volume = 1.0^3 * 0.5 = 0.5 (50% max output)
-        public double ActualVolume => Math.Pow(_volume, 3) * 0.5;
+        // MPV-style quadratic volume scaling
+        // 100% UI volume (1.0) = 1.0^2 = 1.0 actual volume
+        // Quadratic is better balanced: 50% slider = 25% power (vs 12.5% in cubic)
+        public double ActualVolume => Math.Pow(_volume, 2);
 
         private double _speedRatio = 1.0;
         public virtual double SpeedRatio {
@@ -106,6 +107,11 @@ namespace TrainMeX.ViewModels {
 
         public ICommand SkipCommand { get; }
         public ICommand TogglePlayPauseCommand { get; }
+
+        /// <summary>
+        /// Event raised when the entire queue has failed and playback must stop
+        /// </summary>
+        public event EventHandler TerminalFailure;
 
         public HypnoViewModel() {
             SkipCommand = new RelayCommand(_ => PlayNext());
@@ -232,6 +238,7 @@ namespace TrainMeX.ViewModels {
                 if (attempts > _files.Length) {
                     Logger.Warning("All videos in queue have failed too many times. Stopping playback.");
                     MediaErrorOccurred?.Invoke(this, new MediaErrorEventArgs("All videos in queue have failed. Please check your video files."));
+                    TerminalFailure?.Invoke(this, EventArgs.Empty);
                     return;
                 }
                 
@@ -313,10 +320,6 @@ namespace TrainMeX.ViewModels {
                 _currentItem = _files[_currentPos];
                 _currentItem.PropertyChanged += CurrentItem_PropertyChanged;
                 
-                _currentItem = _files[_currentPos];
-                _currentItem.PropertyChanged += CurrentItem_PropertyChanged;
-                
-                
                 var path = _currentItem.FilePath;
                 Logger.Info($"LoadCurrentVideo: Processing item '{_currentItem.FileName}' with path: {path}");
                 
@@ -383,9 +386,44 @@ namespace TrainMeX.ViewModels {
                     // For URLs, use the URL directly
                     newSource = new Uri(path, UriKind.Absolute);
                 } else {
-                    // For local files, use absolute file URI
-                    newSource = new Uri(path, UriKind.Absolute);
+                // Verify file existence for local paths
+                if (Path.IsPathRooted(path) && !path.StartsWith("http")) {
+                   if (!File.Exists(path)) {
+                       Logger.Error($"LoadCurrentVideo: File not found at path: {path}");
+                   } else {
+                       Logger.Info($"LoadCurrentVideo: File verified to exist: {path}");
+                       
+                       // CRITICAL FIX: MediaElement (via WMP) has issues with special chars like brackets [] and sometimes spaces or long paths in URIs.
+                       // Convert to 8.3 short path (e.g. PROJECT~1.MOV) to bypass this completely.
+                       // We check for brackets, spaces, and non-ASCII characters.
+                       if (path.Contains('[') || path.Contains(']') || path.Contains('#') || path.Contains('%') || path.Contains(' ') || path.Any(c => c > 127)) {
+                           string shortPath = GetShortPath(path);
+                           if (!string.Equals(shortPath, path, StringComparison.OrdinalIgnoreCase)) {
+                               Logger.Info($"LoadCurrentVideo: Converted problematic path '{path}' to short path '{shortPath}'");
+                               path = shortPath;
+                           }
+                       }
+                   }
                 }
+
+                if (path.Contains('#') || path.Contains('%')) {
+                    try {
+                        var uriBuilder = new UriBuilder {
+                            Scheme = Uri.UriSchemeFile,
+                            Host = string.Empty,
+                            Path = Path.GetFullPath(path)
+                        };
+                        newSource = uriBuilder.Uri;
+                    } catch (Exception ex) {
+                        Logger.Warning($"Failed to create URI using UriBuilder for path: {path}. Falling back to standard constructor.", ex);
+                        newSource = new Uri(Path.GetFullPath(path));
+                    }
+                } else {
+                    newSource = new Uri(Path.GetFullPath(path));
+                }
+                
+                Logger.Info($"LoadCurrentVideo: Generated URI: {newSource.AbsoluteUri}");
+                } // End if(!IsUrl)
                 
                 // Set expected source inside lock for thread safety
                 lock (_loadLock) {
@@ -400,10 +438,12 @@ namespace TrainMeX.ViewModels {
                 }
                 
                 // Set the source - MediaOpened event will trigger playback
-                CurrentSource = newSource;
-                
-                // Don't call RequestPlay here - wait for MediaOpened to confirm successful load
-                // This prevents timing issues where Play() is called before MediaElement is ready
+                try {
+                     CurrentSource = newSource;
+                } catch (Exception ex) {
+                     Logger.Error($"LoadCurrentVideo: Error setting CurrentSource to '{newSource}': {ex.Message}");
+                     OnMediaFailed(ex);
+                }                // This prevents timing issues where Play() is called before MediaElement is ready
             } catch (Exception ex) {
                 Logger.Error("Error in LoadCurrentVideo()", ex);
                 // Reset loading flag before calling PlayNext() recursively
@@ -538,18 +578,21 @@ namespace TrainMeX.ViewModels {
             _consecutiveFailures++;
             
             // Track failures per file (thread-safe with ConcurrentDictionary)
-            if (filePath != null) {
-                // If it's a known unrecoverable error, force max failures to skip immediately
-                // Codec errors, file not found errors, and URL open errors should skip immediately
-                int increment = (isCodecError || isFileNotFoundError || isUrlOpenError) ? MaxFailuresPerFile : 1;
-                int failureCount = _fileFailureCounts.AddOrUpdate(filePath, increment, (key, oldValue) => oldValue + increment);
-                
-                if (isCodecError || isFileNotFoundError || isUrlOpenError) {
-                    Logger.Warning($"Unrecoverable error for '{fileName}'. Marking as failed immediately to avoid retries.");
-                } else {
-                    Logger.Warning($"File '{fileName}' has failed {failureCount} time(s). Will skip after {MaxFailuresPerFile} failures.");
-                }
-            }
+    if (filePath != null) {
+        // If it's a known unrecoverable error, force max failures to skip immediately
+        // Codec errors, file not found errors (if file REALLLY missing), and URL open errors should skip immediately
+        bool isGenuinelyMissing = isFileNotFoundError && !System.IO.File.Exists(filePath);
+        bool shouldMarkUnrecoverable = isCodecError || isGenuinelyMissing || isUrlOpenError;
+        
+        int increment = shouldMarkUnrecoverable ? MaxFailuresPerFile : 1;
+        int failureCount = _fileFailureCounts.AddOrUpdate(filePath, increment, (key, oldValue) => oldValue + increment);
+        
+        if (shouldMarkUnrecoverable) {
+            Logger.Warning($"Unrecoverable error for '{fileName}'. Marking as failed immediately to avoid retries.");
+        } else {
+            Logger.Warning($"File '{fileName}' has failed {failureCount} time(s). Will skip after {MaxFailuresPerFile} failures.");
+        }
+    }
             
             // Notify listeners (e.g., UI) about the error
             MediaErrorOccurred?.Invoke(this, new MediaErrorEventArgs($"{errorMessage}.{specificAdvice} Error: {ex?.Message ?? "Unknown error"}"));
@@ -559,6 +602,7 @@ namespace TrainMeX.ViewModels {
             if (_consecutiveFailures >= MaxConsecutiveFailures) {
                 Logger.Warning($"Stopped retrying after {MaxConsecutiveFailures} consecutive failures. All videos in queue may be invalid.");
                 MediaErrorOccurred?.Invoke(this, new MediaErrorEventArgs($"Playback stopped after {MaxConsecutiveFailures} consecutive failures. Please check your video files."));
+                TerminalFailure?.Invoke(this, EventArgs.Empty);
                 return;
             }
             
@@ -625,6 +669,29 @@ namespace TrainMeX.ViewModels {
         }
         
         private TimeSpan? _pendingSeekPosition;
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern uint GetShortPathName(string lpszLongPath, System.Text.StringBuilder lpszShortPath, uint cchBuffer);
+
+        private string GetShortPath(string path) {
+            try {
+                // Return original if path is invalid or too short to need conversion
+                if (string.IsNullOrEmpty(path) || !File.Exists(path)) return path;
+
+                var sb = new System.Text.StringBuilder(255);
+                uint result = GetShortPathName(path, sb, (uint)sb.Capacity);
+                
+                // If buffer is too small, resize and retry
+                if (result > sb.Capacity) {
+                    sb = new System.Text.StringBuilder((int)result);
+                    result = GetShortPathName(path, sb, (uint)sb.Capacity);
+                }
+                
+                if (result > 0) return sb.ToString();
+            } catch (Exception ex) {
+                Logger.Warning($"Failed to get short path for {path}", ex);
+            }
+            return path;
+        }
     }
 
     /// <summary>
@@ -636,5 +703,6 @@ namespace TrainMeX.ViewModels {
         public MediaErrorEventArgs(string errorMessage) {
             ErrorMessage = errorMessage;
         }
+
     }
 }
